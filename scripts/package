@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -e -x
 
 source $(dirname $0)/version
 
@@ -7,7 +7,7 @@ cd $(dirname $0)/..
 
 mkdir -p dist/artifacts
 
-IMAGE=${REPO}/system-agent-installer-rke2:${TAG}
+IMAGE=${REPO}/system-agent-installer-rke2:${VERSION}
 DOCKERFILE=package/Dockerfile
 
 docker build -f ${DOCKERFILE} -t ${IMAGE} .

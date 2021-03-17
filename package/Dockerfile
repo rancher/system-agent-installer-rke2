@@ -1,5 +1,5 @@
 FROM scratch
 
-ADD package/run.sh /run.sh
-ADD tmp/install.sh /install.sh
-ADD tmp/rpm /
+COPY package/run.sh /run.sh
+COPY tmp/installer.sh /installer.sh
+COPY tmp/artifacts /artifacts
