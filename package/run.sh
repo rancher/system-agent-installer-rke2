@@ -8,4 +8,4 @@ if [ -z "${INSTALL_RKE2_TYPE}" ]; then
 fi
 systemctl daemon-reload
 systemctl enable rke2-${INSTALL_RKE2_TYPE}
-systemctl start rke2-${INSTALL_RKE2_TYPE}
+systemctl restart rke2-${INSTALL_RKE2_TYPE}
