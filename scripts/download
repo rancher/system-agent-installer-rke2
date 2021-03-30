@@ -9,10 +9,12 @@ cd $(dirname $0)/..
 
 mkdir -p tmp
 
-curl -sfL https://raw.githubusercontent.com/Oats87/rke2/issues/rke2/795/install.sh > tmp/installer.sh
+curl -sfL https://raw.githubusercontent.com/rancher/rke2/master/install.sh > tmp/installer.sh
 chmod +x tmp/installer.sh
 
-mkdir -p tmp/artifacts
-cd tmp/artifacts
-curl -fL -O https://github.com/rancher/rke2/releases/download/${URI_VERSION}/rke2.linux-amd64.tar.gz
-curl -fL -O https://github.com/rancher/rke2/releases/download/${URI_VERSION}/sha256sum-amd64.txt
+if [ -z "${LOCAL_ARTIFACTS}" ]; then
+    mkdir -p artifacts
+    cd artifacts
+    curl -fL -O https://github.com/rancher/rke2/releases/download/${URI_VERSION}/rke2.linux-amd64.tar.gz
+    curl -fL -O https://github.com/rancher/rke2/releases/download/${URI_VERSION}/sha256sum-amd64.txt
+fi
