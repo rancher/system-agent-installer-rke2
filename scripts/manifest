@@ -5,6 +5,8 @@ source $(dirname $0)/version
 
 cd $(dirname $0)/..
 
+docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
+
 DOCKER_CLI_EXPERIMENTAL=enabled docker manifest create --amend ${IMAGE} ${IMAGE}-${OS}-${ARCH}
 DOCKER_CLI_EXPERIMENTAL=enabled docker manifest push ${IMAGE}
 

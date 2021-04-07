@@ -27,7 +27,6 @@ steps:
     DOCKER_USERNAME:
       from_secret: docker_username
   commands:
-  - docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
   - dapper -f Dockerfile.dapper scripts/publish
   volumes:
     - name: docker
@@ -59,7 +58,6 @@ steps:
 - name: publish-manifest-list
   image: rancher/dapper:v0.5.6
   commands:
-  - docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
   - dapper -f Dockerfile.dapper scripts/manifest
   environment:
     DOCKER_PASSWORD:
