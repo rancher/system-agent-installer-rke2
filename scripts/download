@@ -7,14 +7,16 @@ cd $(dirname $0)/..
 
 # This script serves to download/stage the installer
 
-mkdir -p tmp
-
-curl -sfL https://raw.githubusercontent.com/rancher/rke2/master/install.sh > tmp/installer.sh
-chmod +x tmp/installer.sh
+mkdir -p artifacts
 
 if [ -z "${LOCAL_ARTIFACTS}" ]; then
-    mkdir -p artifacts
-    cd artifacts
-    curl -fL -O https://github.com/rancher/rke2/releases/download/${URI_VERSION}/rke2.linux-amd64.tar.gz
-    curl -fL -O https://github.com/rancher/rke2/releases/download/${URI_VERSION}/sha256sum-amd64.txt
+    curl -fL https://raw.githubusercontent.com/rancher/rke2/master/install.sh > artifacts/installer.sh
+    chmod +x artifacts/installer.sh
+    pushd artifacts
+    curl -fL -O -R https://github.com/rancher/rke2/releases/download/${URI_VERSION}/rke2.linux-${ARCH}.tar.gz
+    curl -fL -O -R https://github.com/rancher/rke2/releases/download/${URI_VERSION}/sha256sum-${ARCH}.txt
+    popd
+else
+    cp local/* artifacts
+    chmod +x artifacts/installer.sh
 fi

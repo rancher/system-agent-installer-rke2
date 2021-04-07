@@ -12,9 +12,8 @@ RUN wget -O - https://download.docker.com/linux/debian/gpg | apt-key add - && \
 RUN apt-get update && \
     apt-get install -y docker-ce bash git jq
 
-ENV DAPPER_ENV REPO TAG DRONE_TAG CROSS LOCAL_ARTIFACTS
+ENV DAPPER_ENV REPO TAG DRONE_TAG LOCAL_ARTIFACTS
 ENV DAPPER_SOURCE /go/src/github.com/rancher/system-agent-installer-rke2/
-ENV DAPPER_OUTPUT ./bin ./dist
 ENV DAPPER_DOCKER_SOCKET true
 ENV HOME ${DAPPER_SOURCE}
 WORKDIR ${DAPPER_SOURCE}
