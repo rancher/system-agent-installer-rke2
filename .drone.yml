@@ -1,0 +1,24 @@
+---
+kind: pipeline
+type: docker
+name: build-amd64
+
+platform:
+  os: linux
+  arch: amd64
+
+steps:
+- name: download-amd64
+  image: rancher/dapper:v0.5.2
+  environment:
+    ARCH: amd64
+  commands:
+  - dapper -f Dockerfile.dapper scripts/download
+  volumes:
+    - name: docker
+      path: /var/run/docker.sock
+
+volumes:
+- name: docker
+  host:
+    path: /var/run/docker.sock
