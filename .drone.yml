@@ -60,13 +60,13 @@ steps:
   volumes:
     - name: docker
       path: /var/run/docker.sock
-when:
-  instance:
-    - drone-publish.rancher.io
-  ref:
-    - refs/tags/*
-  event:
-    - tag
+  when:
+    instance:
+      - drone-publish.rancher.io
+    ref:
+      - refs/tags/*
+    event:
+      - tag
 volumes:
 - name: docker
   host:
