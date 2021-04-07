@@ -1,0 +1,11 @@
+#!/bin/bash
+set -e -x
+
+source $(dirname $0)/version
+
+cd $(dirname $0)/..
+
+DOCKER_CLI_EXPERIMENTAL=enabled docker manifest create --amend ${IMAGE} ${IMAGE}-${OS}-${ARCH}
+DOCKER_CLI_EXPERIMENTAL=enabled docker manifest push ${IMAGE}
+
+echo Pushed manifest list for ${IMAGE}

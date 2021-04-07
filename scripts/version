@@ -5,6 +5,10 @@ if [ -z "$ARCH" ]; then
     ARCH="amd64"
 fi
 
+if [ -z "$OS" ]; then
+    OS="linux"
+fi
+
 FALLBACK_VERSION=v1.20.4+rke2r1
 
 # This version script expects either a tag of format: <rke2-version> or no tag at all.
@@ -14,33 +18,37 @@ COMMIT=${COMMIT:-${DRONE_COMMIT:-${GITHUB_SHA:-unknown}}}
 TAG=${TAG:-${DRONE_TAG:-$GITHUB_TAG}}
 
 # If we're in a dapperized environment, we should be able to figure out what our current tag and commit are.
+if [ -z "${TAG}" ]; then
+    if [ -d ${DAPPER_SOURCE}/.git ]; then
+        pushd ${DAPPER_SOURCE}
 
-if [ -d ${DAPPER_SOURCE}/.git ]; then
-    pushd ${DAPPER_SOURCE}
+        if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
+            DIRTY="dirty"
+            TREE_STATE=dirty
+        fi
 
-    if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
-        DIRTY="dirty"
-        TREE_STATE=dirty
+        if [[ "$TREE_STATE" == "clean" && -z "$TAG" ]]; then
+            TAG=$(git tag -l --contains HEAD | head -n 1) # this is going to not work if you have multiple tags pointing to the same commit
+        fi
+
+        COMMIT=$(git rev-parse HEAD)
+        if [ -z "$COMMIT" ]; then
+            COMMIT=$(git rev-parse HEAD || true)
+            echo $COMMIT
+            exit 1
+        fi
+        popd
     fi
 
-    if [[ "$TREE_STATE" == "clean" && -z "$TAG" ]]; then
-        TAG=$(git tag -l --contains HEAD | head -n 1) # this is going to not work if you have multiple tags pointing to the same commit
+    if [[ -n "$TAG" ]]; then
+        if [[ "$TREE_STATE" = "clean" ]]; then
+            VERSION=$TAG # We will only accept the tag as our version if the tree state is clean and the tag is in fact defined.
+        fi
     fi
-
-    COMMIT=$(git rev-parse HEAD)
-    if [ -z "$COMMIT" ]; then
-        COMMIT=$(git rev-parse HEAD || true)
-        echo $COMMIT
-        exit 1
-    fi
-    popd
+else
+    VERSION=$TAG
 fi
 
-if [[ -n "$TAG" ]]; then
-    if [[ "$TREE_STATE" = "clean" ]]; then
-        VERSION=$TAG # We will only accept the tag as our version if the tree state is clean and the tag is in fact defined.
-    fi
-fi
 
 # In the event of us doing a build with no corresponding tag that we can discern, we'll go ahead and just build the package assuming we were dealing with master.
 # This means we'll go to GitHub and pull the latest RKE2 release, and parse it to what we are expecting.
@@ -75,3 +83,5 @@ URI_VERSION=$(sed -e 's/+/%2B/g' <<<"$VERSION")
 VERSION=$(sed -e 's/+/-/g' <<<"$VERSION")
 
 REPO=${REPO:-rancher}
+
+IMAGE=${REPO}/system-agent-installer-rke2:${VERSION}

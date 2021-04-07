@@ -1,23 +1,72 @@
 ---
 kind: pipeline
 type: docker
-name: build-amd64
+name: build-linux-amd64
 
 platform:
   os: linux
   arch: amd64
 
 steps:
-- name: download-amd64
-  image: rancher/dapper:v0.5.2
+- name: build-linux-amd64
+  image: rancher/dapper:v0.5.6
   environment:
     ARCH: amd64
   commands:
-  - dapper -f Dockerfile.dapper scripts/download
+  - dapper -f Dockerfile.dapper scripts/build
   volumes:
     - name: docker
       path: /var/run/docker.sock
 
+- name: publish-linux-amd64
+  image: rancher/dapper:v0.5.6
+  environment:
+    ARCH: amd64
+  commands:
+  - docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
+  - dapper -f Dockerfile.dapper scripts/publish
+  volumes:
+    - name: docker
+      path: /var/run/docker.sock
+  when:
+    instance:
+      - drone-publish.rancher.io
+    ref:
+      - refs/tags/*
+    event:
+      - tag
+
+volumes:
+- name: docker
+  host:
+    path: /var/run/docker.sock
+
+---
+kind: pipeline
+name: manifest
+
+platform:
+  os: linux
+  arch: amd64
+depends_on:
+  - build-linux-amd64
+
+steps:
+- name: publish-manifest-list
+  image: rancher/dapper:v0.5.6
+  commands:
+  - docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
+  - dapper -f Dockerfile.dapper scripts/manifest
+  volumes:
+    - name: docker
+      path: /var/run/docker.sock
+  when:
+    instance:
+      - drone-publish.rancher.io
+    ref:
+      - refs/tags/*
+    event:
+      - tag
 volumes:
 - name: docker
   host:

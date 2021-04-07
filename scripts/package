@@ -5,8 +5,8 @@ source $(dirname $0)/version
 
 cd $(dirname $0)/..
 
-IMAGE=${REPO}/system-agent-installer-rke2:${VERSION}-${ARCH}
 DOCKERFILE=package/Dockerfile
 
-docker build -f ${DOCKERFILE} -t ${IMAGE} .
-echo Built ${IMAGE}
+DOCKER_BUILDKIT=${DOCKER_BUILDKIT:-1} docker image build -f ${DOCKERFILE} -t ${IMAGE}-${OS}-${ARCH} .
+
+echo Built ${IMAGE}-${OS}-${ARCH}
