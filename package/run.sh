@@ -19,7 +19,7 @@ fi
 env "INSTALL_RKE2_ARTIFACT_PATH=${CATTLE_AGENT_EXECUTION_PWD}" installer.sh
 
 if [ -z "${INSTALL_RKE2_TYPE}" ]; then
-    INSTALL_RKE2_TYPE="server"
+    INSTALL_RKE2_TYPE="${INSTALL_RKE2_EXEC:-server}"
 fi
 
 if [ -n "${RESTART_STAMP}" ]; then
