@@ -39,5 +39,5 @@ if [ "${INSTALL_RKE2_SKIP_START}" = true ]; then
 fi
 
 if [ "${RESTART}" = true ]; then
-    systemctl restart rke2-${INSTALL_RKE2_TYPE}
+    systemctl --no-block restart rke2-${INSTALL_RKE2_TYPE}
 fi
