@@ -5,7 +5,9 @@ set -x -e
 mkdir -p /var/lib/rancher/rke2
 
 RESTART_STAMP_FILE=/var/lib/rancher/rke2/restart_stamp
-RKE2_ENV_FILE="/etc/systemd/system/rke2-${INSTALL_RKE2_TYPE}.env"
+RKE2_SA_ENV_FILE_NAME="rke2-sa.env"
+RKE2_SA_ENV_FILE_PATH="/etc/systemd/system/${RKE2_SA_ENV_FILE_NAME}"
+RKE2_SA_ENV_SRV_REF="EnvironmentFile=-${RKE2_SA_ENV_FILE_PATH}"
 
 if [ -f "${RESTART_STAMP_FILE}" ]; then
     PRIOR_RESTART_STAMP=$(cat "${RESTART_STAMP_FILE}");
@@ -19,15 +21,19 @@ fi
 
 env "INSTALL_RKE2_ARTIFACT_PATH=${CATTLE_AGENT_EXECUTION_PWD}" installer.sh
 
-if [ ! -f "${RKE2_ENV_FILE}" ]; then
-    install -m 600 /dev/null "${RKE2_ENV_FILE}"
+if [ ! -f "${RKE2_SA_ENV_FILE_PATH}" ]; then
+    install -m 600 /dev/null "${RKE2_SA_ENV_FILE_PATH}"
 fi
 
-env | grep '^RKE2_' >> "${RKE2_ENV_FILE}"
-env | grep -Ei '^(NO|HTTP|HTTPS)_PROXY' >> "${RKE2_ENV_FILE}"
+env | grep '^RKE2_' >> "${RKE2_SA_ENV_FILE_PATH}"
+env | grep -Ei '^(NO|HTTP|HTTPS)_PROXY' >> "${RKE2_SA_ENV_FILE_PATH}"
 
 if [ -z "${INSTALL_RKE2_TYPE}" ]; then
     INSTALL_RKE2_TYPE="${INSTALL_RKE2_EXEC:-server}"
+fi
+
+if ! grep -q "${RKE2_SA_ENV_SRV_REF}" ; then 
+    echo "${RKE2_SA_ENV_SRV_REF}" >> "/etc/systemd/system/rke2-${INSTALL_RKE2_TYPE}.service"
 fi
 
 if [ -n "${RESTART_STAMP}" ]; then
