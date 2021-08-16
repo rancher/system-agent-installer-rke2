@@ -32,7 +32,7 @@ if [ -z "${INSTALL_RKE2_TYPE}" ]; then
     INSTALL_RKE2_TYPE="${INSTALL_RKE2_EXEC:-server}"
 fi
 
-if ! grep -q "${RKE2_SA_ENV_SRV_REF}" ; then 
+if ! grep -q "${RKE2_SA_ENV_SRV_REF}" "/etc/systemd/system/rke2-${INSTALL_RKE2_TYPE}.service" ; then 
     echo "${RKE2_SA_ENV_SRV_REF}" >> "/etc/systemd/system/rke2-${INSTALL_RKE2_TYPE}.service"
 fi
 
