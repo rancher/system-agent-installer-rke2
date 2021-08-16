@@ -25,12 +25,8 @@ if [ ! -f "${RKE2_SA_ENV_FILE_PATH}" ]; then
     install -m 600 /dev/null "${RKE2_SA_ENV_FILE_PATH}"
 fi
 
-if [ $(stat -c %s "${RKE2_SA_ENV_FILE_PATH}") = 0 ]; then 
-    env | grep '^RKE2_' >> "${RKE2_SA_ENV_FILE_PATH}"
-    env | grep -Ei '^(NO|HTTP|HTTPS)_PROXY' >> "${RKE2_SA_ENV_FILE_PATH}"
-fi
-
-
+env | grep '^RKE2_' >> "${RKE2_SA_ENV_FILE_PATH}"
+env | grep -Ei '^(NO|HTTP|HTTPS)_PROXY' >> "${RKE2_SA_ENV_FILE_PATH}"
 
 if [ -z "${INSTALL_RKE2_TYPE}" ]; then
     INSTALL_RKE2_TYPE="${INSTALL_RKE2_EXEC:-server}"
