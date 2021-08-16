@@ -5,7 +5,7 @@ set -x -e
 mkdir -p /var/lib/rancher/rke2
 
 RESTART_STAMP_FILE=/var/lib/rancher/rke2/restart_stamp
-RKE2_ENV_FILE="rke2-${INSTALL_RKE2_TYPE}.env"
+RKE2_ENV_FILE="/etc/systemd/system/rke2-${INSTALL_RKE2_TYPE}.env"
 
 if [ -f "${RESTART_STAMP_FILE}" ]; then
     PRIOR_RESTART_STAMP=$(cat "${RESTART_STAMP_FILE}");
