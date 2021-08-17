@@ -6,7 +6,7 @@ mkdir -p /var/lib/rancher/rke2
 
 RESTART_STAMP_FILE=/var/lib/rancher/rke2/restart_stamp
 RKE2_SA_ENV_FILE_NAME="rke2-sa.env"
-RKE2_SA_ENV_FILE_PATH="/etc/systemd/system/${RKE2_SA_ENV_FILE_NAME}"
+RKE2_SA_ENV_FILE_PATH="/usr/local/lib/systemd/system/${RKE2_SA_ENV_FILE_NAME}"
 RKE2_SA_ENV_SRV_REF="EnvironmentFile=-${RKE2_SA_ENV_FILE_PATH}"
 
 if [ -f "${RESTART_STAMP_FILE}" ]; then
