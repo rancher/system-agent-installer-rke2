@@ -6,7 +6,8 @@ mkdir -p /var/lib/rancher/rke2
 
 RESTART_STAMP_FILE=/var/lib/rancher/rke2/restart_stamp
 RKE2_SA_ENV_FILE_NAME="rke2-sa.env"
-RKE2_SA_ENV_FILE_PATH="/usr/local/lib/systemd/system/${RKE2_SA_ENV_FILE_NAME}"
+SYSTEMD_BASE_PATH="/usr/local/lib/systemd/system"
+RKE2_SA_ENV_FILE_PATH="${SYSTEMD_BASE_PATH}/${RKE2_SA_ENV_FILE_NAME}"
 RKE2_SA_ENV_SRV_REF="EnvironmentFile=-${RKE2_SA_ENV_FILE_PATH}"
 
 if [ -f "${RESTART_STAMP_FILE}" ]; then
@@ -21,10 +22,13 @@ fi
 
 env "INSTALL_RKE2_ARTIFACT_PATH=${CATTLE_AGENT_EXECUTION_PWD}" installer.sh
 
+if [ ! -d "${SYSTEMD_BASE_PATH}" ]; then 
+    mkdir -p "${SYSTEMD_BASE_PATH}"
+fi
+
 if [ ! -f "${RKE2_SA_ENV_FILE_PATH}" ]; then
     install -m 600 /dev/null "${RKE2_SA_ENV_FILE_PATH}"
 fi
-
 
 RKE2_ENV=$(env | { grep '^RKE2_' || true; })
 if [ -n "${RKE2_ENV}" ]; then
@@ -40,8 +44,8 @@ if [ -z "${INSTALL_RKE2_TYPE}" ]; then
     INSTALL_RKE2_TYPE="${INSTALL_RKE2_EXEC:-server}"
 fi
 
-if ! grep -q "${RKE2_SA_ENV_SRV_REF}" "/usr/local/lib/systemd/system/rke2-${INSTALL_RKE2_TYPE}.service" ; then 
-    echo "${RKE2_SA_ENV_SRV_REF}" >> "/usr/local/lib/systemd/system/rke2-${INSTALL_RKE2_TYPE}.service"
+if ! grep -q "${RKE2_SA_ENV_SRV_REF}" "${SYSTEMD_BASE_PATH}/rke2-${INSTALL_RKE2_TYPE}.service" ; then 
+    echo "${RKE2_SA_ENV_SRV_REF}" >> "${SYSTEMD_BASE_PATH}/rke2-${INSTALL_RKE2_TYPE}.service"
 fi
 
 if [ -n "${RESTART_STAMP}" ]; then
