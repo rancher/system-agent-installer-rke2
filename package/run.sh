@@ -2,11 +2,25 @@
 
 set -x -e
 
+SA_INSTALL_PREFIX="/usr/local"
+
+# check_target_mountpoint return success if the target directory is on a dedicated mount point
+check_target_mountpoint() {
+    mountpoint -q "${PREFIX}"
+}
+
+# check_target_ro returns success if the target directory is read-only
+check_target_ro() {
+    touch "${SA_INSTALL_PREFIX}"/.rke2-ro-test && rm -rf "${SA_INSTALL_PREFIX}"/.rke2-ro-test
+    test $? -ne 0
+}
+
 mkdir -p /var/lib/rancher/rke2
 
 RESTART_STAMP_FILE=/var/lib/rancher/rke2/restart_stamp
 RKE2_SA_ENV_FILE_NAME="rke2-sa.env"
-SYSTEMD_BASE_PATH="/usr/local/lib/systemd/system"
+
+SYSTEMD_BASE_PATH="${SA_INSTALL_PREFIX}/lib/systemd/system"
 RKE2_SA_ENV_FILE_PATH="${SYSTEMD_BASE_PATH}/${RKE2_SA_ENV_FILE_NAME}"
 RKE2_SA_ENV_SRV_REF="EnvironmentFile=-${RKE2_SA_ENV_FILE_PATH}"
 
@@ -21,6 +35,11 @@ else
 fi
 
 env "INSTALL_RKE2_ARTIFACT_PATH=${CATTLE_AGENT_EXECUTION_PWD}" installer.sh
+
+if check_target_mountpoint || check_target_ro; then
+    echo "${SA_INSTALL_PREFIX} is ro or a mount point"
+    SA_INSTALL_PREFIX="/opt/rke2-sa"
+fi
 
 if [ ! -d "${SYSTEMD_BASE_PATH}" ]; then 
     mkdir -p "${SYSTEMD_BASE_PATH}"
