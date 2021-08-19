@@ -2,11 +2,31 @@
 
 set -x -e
 
+SA_INSTALL_PREFIX="/usr/local"
+
+# check_target_mountpoint return success if the target directory is on a dedicated mount point
+check_target_mountpoint() {
+    mountpoint -q "${PREFIX}"
+}
+
+# check_target_ro returns success if the target directory is read-only
+check_target_ro() {
+    touch "${SA_INSTALL_PREFIX}"/.rke2-ro-test && rm -rf "${SA_INSTALL_PREFIX}"/.rke2-ro-test
+    test $? -ne 0
+}
+
 mkdir -p /var/lib/rancher/rke2
 
 RESTART_STAMP_FILE=/var/lib/rancher/rke2/restart_stamp
 RKE2_SA_ENV_FILE_NAME="rke2-sa.env"
-RKE2_SA_ENV_FILE_PATH="/usr/local/lib/systemd/system/${RKE2_SA_ENV_FILE_NAME}"
+
+if check_target_mountpoint || check_target_ro; then
+    echo "${SA_INSTALL_PREFIX} is ro or a mount point"
+    SA_INSTALL_PREFIX="/opt/rke2"
+fi
+
+SYSTEMD_BASE_PATH="${SA_INSTALL_PREFIX}/lib/systemd/system"
+RKE2_SA_ENV_FILE_PATH="${SYSTEMD_BASE_PATH}/${RKE2_SA_ENV_FILE_NAME}"
 RKE2_SA_ENV_SRV_REF="EnvironmentFile=-${RKE2_SA_ENV_FILE_PATH}"
 
 if [ -f "${RESTART_STAMP_FILE}" ]; then
@@ -19,12 +39,11 @@ else
     RESTART=false
 fi
 
-env "INSTALL_RKE2_ARTIFACT_PATH=${CATTLE_AGENT_EXECUTION_PWD}" installer.sh
+env "INSTALL_RKE2_ARTIFACT_PATH=${CATTLE_AGENT_EXECUTION_PWD}" "INSTALL_RKE2_TAR_PREFIX=${SA_INSTALL_PREFIX}" installer.sh
 
 if [ ! -f "${RKE2_SA_ENV_FILE_PATH}" ]; then
     install -m 600 /dev/null "${RKE2_SA_ENV_FILE_PATH}"
 fi
-
 
 RKE2_ENV=$(env | { grep '^RKE2_' || true; })
 if [ -n "${RKE2_ENV}" ]; then
@@ -40,8 +59,8 @@ if [ -z "${INSTALL_RKE2_TYPE}" ]; then
     INSTALL_RKE2_TYPE="${INSTALL_RKE2_EXEC:-server}"
 fi
 
-if ! grep -q "${RKE2_SA_ENV_SRV_REF}" "/usr/local/lib/systemd/system/rke2-${INSTALL_RKE2_TYPE}.service" ; then 
-    echo "${RKE2_SA_ENV_SRV_REF}" >> "/usr/local/lib/systemd/system/rke2-${INSTALL_RKE2_TYPE}.service"
+if ! grep -q "${RKE2_SA_ENV_SRV_REF}" "${SYSTEMD_BASE_PATH}/rke2-${INSTALL_RKE2_TYPE}.service" ; then 
+    echo "${RKE2_SA_ENV_SRV_REF}" >> "${SYSTEMD_BASE_PATH}/rke2-${INSTALL_RKE2_TYPE}.service"
 fi
 
 if [ -n "${RESTART_STAMP}" ]; then
