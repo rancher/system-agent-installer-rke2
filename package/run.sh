@@ -41,10 +41,6 @@ fi
 
 env "INSTALL_RKE2_ARTIFACT_PATH=${CATTLE_AGENT_EXECUTION_PWD}" INSTALL_RKE2_TAR_PREFIX="${SA_INSTALL_PREFIX}" installer.sh
 
-if [ ! -d "${SYSTEMD_BASE_PATH}" ]; then 
-    mkdir -p "${SYSTEMD_BASE_PATH}"
-fi
-
 if [ ! -f "${RKE2_SA_ENV_FILE_PATH}" ]; then
     install -m 600 /dev/null "${RKE2_SA_ENV_FILE_PATH}"
 fi
