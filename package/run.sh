@@ -17,8 +17,13 @@ check_target_ro() {
 
 mkdir -p /var/lib/rancher/rke2
 
-RESTART_STAMP_FILE=/var/lib/rancher/rke2/restart_stamp
+SAI_FILE_DIR="/var/lib/rancher/rke2/system-agent-installer"
+RESTART_STAMP_FILE="${SAI_FILE_DIR}/rke2_restart_stamp"
 RKE2_SA_ENV_FILE_NAME="rke2-sa.env"
+
+if [ ! -d "${SAI_FILE_DIR}" ]; then
+    mkdir -p "${SAI_FILE_DIR}"
+fi
 
 if check_target_mountpoint || check_target_ro; then
     echo "${SA_INSTALL_PREFIX} is ro or a mount point"
@@ -26,7 +31,7 @@ if check_target_mountpoint || check_target_ro; then
 fi
 
 SYSTEMD_BASE_PATH="${SA_INSTALL_PREFIX}/lib/systemd/system"
-RKE2_SA_ENV_FILE_PATH="${SYSTEMD_BASE_PATH}/${RKE2_SA_ENV_FILE_NAME}"
+RKE2_SA_ENV_FILE_PATH="${SAI_FILE_DIR}/${RKE2_SA_ENV_FILE_NAME}"
 RKE2_SA_ENV_SRV_REF="EnvironmentFile=-${RKE2_SA_ENV_FILE_PATH}"
 
 if [ -f "${RESTART_STAMP_FILE}" ]; then
