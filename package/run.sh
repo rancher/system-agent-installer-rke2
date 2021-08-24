@@ -46,9 +46,13 @@ fi
 
 env "INSTALL_RKE2_ARTIFACT_PATH=${CATTLE_AGENT_EXECUTION_PWD}" "INSTALL_RKE2_TAR_PREFIX=${SA_INSTALL_PREFIX}" installer.sh
 
-if [ ! -f "${RKE2_SA_ENV_FILE_PATH}" ]; then
-    install -m 600 /dev/null "${RKE2_SA_ENV_FILE_PATH}"
+if [ -f "${RKE2_SA_ENV_FILE_PATH}" ]; then
+    OLD_ENV_FILE_PATH_HASH=$(sha256sum "${RKE2_SA_ENV_FILE_PATH}" | awk '{print $1}')
+else
+    OLD_ENV_FILE_PATH_HASH="e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
 fi
+
+install -m 600 /dev/null "${RKE2_SA_ENV_FILE_PATH}"
 
 RKE2_ENV=$(env | { grep '^RKE2_' || true; })
 if [ -n "${RKE2_ENV}" ]; then
@@ -58,6 +62,12 @@ fi
 PROXY_ENV_INFO=$(env | { grep -Ei '^(NO|HTTP|HTTPS)_PROXY' || true; })
 if [ -n "${PROXY_ENV_INFO}" ]; then
     echo "${PROXY_ENV_INFO}" >> "${RKE2_SA_ENV_FILE_PATH}"
+fi
+
+NEW_ENV_FILE_PATH_HASH=$(sha256sum "${RKE2_SA_ENV_FILE_PATH}" | awk '{print $1}')
+
+if [ "${OLD_ENV_FILE_PATH_HASH}" != "${NEW_ENV_FILE_PATH_HASH}" ]; then
+    RESTART=true
 fi
 
 if [ -z "${INSTALL_RKE2_TYPE}" ]; then
