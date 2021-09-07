@@ -88,6 +88,12 @@ if [ "${INSTALL_RKE2_SKIP_ENABLE}" = true ]; then
     exit 0
 fi
 
+if [ "${INSTALL_RKE2_TYPE}" = "server" ]  && systemctl is-active --quiet rke2-agent; then
+    systemctl stop rke2-agent
+    systemctl disable rke2-agent
+    systemctl reset-failed rke2-agent
+fi
+
 systemctl enable "rke2-${INSTALL_RKE2_TYPE}"
 
 if [ "${INSTALL_RKE2_SKIP_START}" = true ]; then
