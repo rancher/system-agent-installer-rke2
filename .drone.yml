@@ -8,29 +8,32 @@ platform:
   arch: amd64
 
 steps:
-- name: build-linux-amd64
+- name: download-linux-amd64
   image: rancher/dapper:v0.5.6
   environment:
     ARCH: amd64
   commands:
-  - dapper -f Dockerfile.dapper scripts/build
+    - dapper -f Dockerfile.dapper scripts/download
   volumes:
     - name: docker
       path: /var/run/docker.sock
 
 - name: publish-linux-amd64
-  image: rancher/dapper:v0.5.6
-  environment:
-    ARCH: amd64
-    DOCKER_PASSWORD:
+  image: plugins/docker
+  settings:
+    purge: false
+    build_args:
+      - ARCH=amd64
+      - "VERSION=${DRONE_TAG/+/-}"
+    context: package/
+    custom_dns: 1.1.1.1
+    dockerfile: package/Dockerfile
+    password:
       from_secret: docker_password
-    DOCKER_USERNAME:
+    repo: rancher/system-agent-installer-rke2
+    tag: "${DRONE_TAG/+/-}-linux-amd64"
+    username:
       from_secret: docker_username
-  commands:
-  - dapper -f Dockerfile.dapper scripts/publish
-  volumes:
-    - name: docker
-      path: /var/run/docker.sock
   when:
     instance:
       - drone-publish.rancher.io
@@ -43,7 +46,6 @@ volumes:
 - name: docker
   host:
     path: /var/run/docker.sock
-
 ---
 kind: pipeline
 name: manifest
@@ -55,15 +57,14 @@ depends_on:
   - build-linux-amd64
 
 steps:
-- name: publish-manifest-list
-  image: rancher/dapper:v0.5.6
-  commands:
-  - dapper -f Dockerfile.dapper scripts/manifest
-  environment:
-    DOCKER_PASSWORD:
-      from_secret: docker_password
-    DOCKER_USERNAME:
+- name: push-manifest
+  image: plugins/manifest
+  settings:
+    username:
       from_secret: docker_username
+    password:
+      from_secret: docker_password
+    spec: manifest.tmpl
   volumes:
     - name: docker
       path: /var/run/docker.sock
@@ -75,6 +76,7 @@ steps:
     event:
       - tag
 volumes:
-- name: docker
-  host:
-    path: /var/run/docker.sock
+  - name: docker
+    host:
+      path: /var/run/docker.sock
+
