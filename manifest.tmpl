@@ -1,0 +1,7 @@
+image: rancher/system-agent-installer-rke2:{{#if build.tag}}{{build.tag}}{{else}}{{replace "release/" "" build.branch }}-{{build.commit}}-head{{/if}}
+manifests:
+  -
+    image: rancher/system-agent-installer-rke2:{{#if build.tag}}{{build.tag}}{{else}}{{replace "release/" "" build.branch }}-{{build.commit}}{{/if}}-linux-amd64
+    platform:
+      architecture: amd64
+      os: linux
