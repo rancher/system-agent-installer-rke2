@@ -25,7 +25,7 @@ steps:
     build_args:
       - ARCH=amd64
       - "VERSION=${DRONE_TAG/+/-}"
-    context: package/
+    context: .
     custom_dns: 1.1.1.1
     dockerfile: package/Dockerfile
     password:
