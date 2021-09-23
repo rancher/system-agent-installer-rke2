@@ -9,14 +9,13 @@ platform:
 
 steps:
 - name: download-linux-amd64
-  image: rancher/dapper:v0.5.6
+  image: registry.suse.com/suse/sle15:15.3.17.8.1
   environment:
     ARCH: amd64
   commands:
-    - dapper -f Dockerfile.dapper scripts/download
-  volumes:
-    - name: docker
-      path: /var/run/docker.sock
+    - zypper -n install curl jq git
+    - install -y -f docker-20.10.6_ce-6.49.3
+    - scripts/download
 
 - name: publish-linux-amd64
   image: plugins/docker
@@ -41,11 +40,6 @@ steps:
       - refs/tags/*
     event:
       - tag
-
-volumes:
-- name: docker
-  host:
-    path: /var/run/docker.sock
 ---
 kind: pipeline
 name: manifest
