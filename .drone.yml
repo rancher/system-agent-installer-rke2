@@ -14,8 +14,27 @@ steps:
     ARCH: amd64
   commands:
     - zypper -n install curl jq git
-    - zypper install -y -f docker-20.10.6_ce-6.49.3
     - scripts/download
+    -
+- name: build-linux-amd64
+  image: plugins/docker
+  settings:
+    purge: false
+    dry_run: true
+    build_args:
+      - ARCH=amd64
+      - "VERSION=${DRONE_TAG/+/-}"
+    custom_dns: 1.1.1.1
+    dockerfile: package/Dockerfile
+    password:
+      from_secret: docker_password
+    repo: rancher/system-agent-installer-rke2
+    tag: "${DRONE_COMMIT/+/-}-linux-amd64"
+    username:
+      from_secret: docker_username
+  when:
+    event:
+      - pull_request
 
 - name: publish-linux-amd64
   image: plugins/docker
@@ -24,7 +43,6 @@ steps:
     build_args:
       - ARCH=amd64
       - "VERSION=${DRONE_TAG/+/-}"
-    context: .
     custom_dns: 1.1.1.1
     dockerfile: package/Dockerfile
     password:
