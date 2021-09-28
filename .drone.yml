@@ -15,7 +15,6 @@ steps:
   commands:
     - zypper -n install curl jq git
     - scripts/download
-    -
 - name: build-linux-amd64
   image: plugins/docker
   settings:
@@ -77,7 +76,6 @@ steps:
     password:
       from_secret: docker_password
     spec: manifest.tmpl
-    build.tag: "${DRONE_TAG/+/-}"
   volumes:
     - name: docker
       path: /var/run/docker.sock
