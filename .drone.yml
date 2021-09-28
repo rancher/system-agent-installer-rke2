@@ -77,6 +77,7 @@ steps:
     password:
       from_secret: docker_password
     spec: manifest.tmpl
+    build.tag: "${DRONE_COMMIT/+/-}"
   volumes:
     - name: docker
       path: /var/run/docker.sock
