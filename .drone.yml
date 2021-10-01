@@ -8,55 +8,130 @@ platform:
   arch: amd64
 
 steps:
-- name: download-linux-amd64
-  image: registry.suse.com/suse/sle15:15.3.17.8.1
-  environment:
-    ARCH: amd64
-  commands:
-    - zypper -n install curl jq git
-    - scripts/download
-- name: build-linux-amd64
-  image: plugins/docker
-  settings:
-    purge: false
-    dry_run: true
-    build_args:
-      - ARCH=amd64
-      - "VERSION=${DRONE_TAG/+/-}"
-    custom_dns: 1.1.1.1
-    dockerfile: package/Dockerfile
-    password:
-      from_secret: docker_password
-    repo: rancher/system-agent-installer-rke2
-    tag: "${DRONE_COMMIT/+/-}-linux-amd64"
-    username:
-      from_secret: docker_username
-  when:
-    event:
-      - pull_request
 
-- name: publish-linux-amd64
-  image: plugins/docker
-  settings:
-    purge: false
-    build_args:
-      - ARCH=amd64
-      - "VERSION=${DRONE_TAG/+/-}"
-    custom_dns: 1.1.1.1
-    dockerfile: package/Dockerfile
-    password:
-      from_secret: docker_password
-    repo: rancher/system-agent-installer-rke2
-    tag: "${DRONE_TAG/+/-}-linux-amd64"
-    username:
-      from_secret: docker_username
-  when:
-    instance:
-      - drone-publish.rancher.io
-    ref:
-      - refs/tags/*
-    event:
-      - tag
+  - name: download-linux-amd64
+    image: registry.suse.com/suse/sle15:15.3.17.8.1
+    environment:
+      ARCH: amd64
+    commands:
+      - zypper -n install curl jq git
+      - scripts/download
+
+  - name: build-linux-amd64
+    image: plugins/docker
+    settings:
+      purge: false
+      dry_run: true
+      build_args:
+        - ARCH=amd64
+        - "VERSION=${DRONE_TAG/+/-}"
+      custom_dns: 1.1.1.1
+      dockerfile: package/Dockerfile
+      password:
+        from_secret: docker_password
+      repo: rancher/system-agent-installer-rke2
+      tag: "${DRONE_COMMIT/+/-}-linux-amd64"
+      username:
+        from_secret: docker_username
+    when:
+      event:
+        - pull_request
+
+  - name: publish-linux-amd64
+    image: plugins/docker
+    settings:
+      purge: false
+      build_args:
+        - ARCH=amd64
+        - "VERSION=${DRONE_TAG/+/-}"
+      custom_dns: 1.1.1.1
+      dockerfile: package/Dockerfile
+      password:
+        from_secret: docker_password
+      repo: rancher/system-agent-installer-rke2
+      tag: "${DRONE_TAG/+/-}-linux-amd64"
+      username:
+        from_secret: docker_username
+    when:
+      instance:
+        - drone-publish.rancher.io
+      ref:
+        - refs/tags/*
+      event:
+        - tag
+---
+kind: pipeline
+name: build-windows-1809-amd64
+
+platform:
+  os: windows
+  arch: amd64
+  version: 1809
+
+steps:
+
+  - name: download-windows-1809-amd64
+    image: mcr.microsoft.com/windows/servercore:1809-amd64
+    environment:
+      ARCH: amd64
+    commands:
+      - powershell scripts/windows/download.ps1
+
+  - name: build-windows-1809-amd64
+    image: plugins/docker:windows-1809-amd64
+    settings:
+      purge: false
+      dry_run: true
+      build_args:
+        - SERVERCORE_VERSION=1809
+        - ARCH=amd64
+        - "VERSION=${DRONE_TAG/+/-}"
+      custom_dns: 1.1.1.1
+      dockerfile: package/Dockerfile.windows
+      password:
+        from_secret: docker_password
+      repo: rancher/system-agent-installer-rke2
+      tag: "${DRONE_COMMIT/+/-}-windows-1809-amd64"
+      username:
+        from_secret: docker_username
+    volumes:
+      - name: docker_pipe
+        path: \\\\.\\pipe\\docker_engine
+    when:
+      event:
+        - pull_request
+
+  - name: publish-windows-1809-amd64
+    image: plugins/docker:windows-1809-amd64
+    settings:
+      purge: false
+      build_args:
+        - SERVERCORE_VERSION=1809
+        - ARCH=amd64
+        - "VERSION=${DRONE_TAG/+/-}"
+      custom_dns: 1.1.1.1
+      dockerfile: package/Dockerfile.windows
+      password:
+        from_secret: docker_password
+      repo: rancher/system-agent-installer-rke2
+      tag: "${DRONE_TAG/+/-}-windows-1809-amd64"
+      username:
+        from_secret: docker_username
+    volumes:
+      - name: docker_pipe
+        path: \\\\.\\pipe\\docker_engine
+    when:
+      instance:
+        - drone-publish.rancher.io
+      ref:
+        - refs/tags/*
+      event:
+        - tag
+
+volumes:
+  - name: docker_pipe
+    host:
+      path: \\\\.\\pipe\\docker_engine
 ---
 kind: pipeline
 name: manifest
@@ -66,28 +141,30 @@ platform:
   arch: amd64
 depends_on:
   - build-linux-amd64
+  - build-windows-1809-amd64
 
 steps:
-- name: push-manifest
-  image: plugins/manifest
-  settings:
-    username:
-      from_secret: docker_username
-    password:
-      from_secret: docker_password
-    spec: manifest.tmpl
-  volumes:
-    - name: docker
-      path: /var/run/docker.sock
-  when:
-    instance:
-      - drone-publish.rancher.io
-    ref:
-      - refs/tags/*
-    event:
-      - tag
+
+  - name: push-manifest
+    image: plugins/manifest
+    settings:
+      username:
+        from_secret: docker_username
+      password:
+        from_secret: docker_password
+      spec: manifest.tmpl
+    volumes:
+      - name: docker
+        path: /var/run/docker.sock
+    when:
+      instance:
+        - drone-publish.rancher.io
+      ref:
+        - refs/tags/*
+      event:
+        - tag
+
 volumes:
   - name: docker
     host:
       path: /var/run/docker.sock
-
