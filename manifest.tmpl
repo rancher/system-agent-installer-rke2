@@ -9,3 +9,8 @@ manifests:
       architecture: amd64
       os: windows
       version: 1809
+  - image: rancher/system-agent-installer-rke2:{{replace "+" "-" build.tag}}-windows-ltsc2022-amd64
+    platform:
+      architecture: amd64
+      os: windows
+      version: ltsc2022

@@ -61,6 +61,7 @@ steps:
         - tag
 ---
 kind: pipeline
+type: docker
 name: build-windows-1809-amd64
 
 platform:
@@ -132,8 +133,93 @@ volumes:
   - name: docker_pipe
     host:
       path: \\\\.\\pipe\\docker_engine
+
 ---
 kind: pipeline
+type: docker
+name: build-windows-ltsc2022-amd64
+
+platform:
+  os: windows
+  arch: amd64
+  version: 2022
+
+clone:
+  disable: true
+
+steps:
+
+  - name: clone
+    image: rancher/drone-images:git-amd64-ltsc2022
+    settings:
+      depth: 1
+
+  - name: download-windows-ltsc2022-amd64
+    image: mcr.microsoft.com/windows/servercore:ltsc2022-amd64
+    environment:
+      ARCH: amd64
+    commands:
+      - powershell scripts/windows/download.ps1
+
+  - name: build-windows-ltsc2022-amd64
+    image: rancher/drone-images:docker-amd64-ltsc2022
+    settings:
+      purge: false
+      dry_run: true
+      build_args:
+        - SERVERCORE_VERSION=ltsc2022
+        - ARCH=amd64
+        - "VERSION=${DRONE_TAG/+/-}"
+      custom_dns: 1.1.1.1
+      dockerfile: package/Dockerfile.windows
+      password:
+        from_secret: docker_password
+      repo: rancher/system-agent-installer-rke2
+      tag: "${DRONE_COMMIT/+/-}-windows-ltsc2022-amd64"
+      username:
+        from_secret: docker_username
+    volumes:
+      - name: docker_pipe
+        path: \\\\.\\pipe\\docker_engine
+    when:
+      event:
+        - pull_request
+
+  - name: publish-windows-ltsc2022-amd64
+    image: rancher/drone-images:docker-amd64-ltsc2022
+    settings:
+      purge: false
+      build_args:
+        - SERVERCORE_VERSION=ltsc2022
+        - ARCH=amd64
+        - "VERSION=${DRONE_TAG/+/-}"
+      custom_dns: 1.1.1.1
+      dockerfile: package/Dockerfile.windows
+      password:
+        from_secret: docker_password
+      repo: rancher/system-agent-installer-rke2
+      tag: "${DRONE_TAG/+/-}-windows-ltsc2022-amd64"
+      username:
+        from_secret: docker_username
+    volumes:
+      - name: docker_pipe
+        path: \\\\.\\pipe\\docker_engine
+    when:
+      instance:
+        - drone-publish.rancher.io
+      ref:
+        - refs/tags/*
+      event:
+        - tag
+
+volumes:
+  - name: docker_pipe
+    host:
+      path: \\\\.\\pipe\\docker_engine
+
+---
+kind: pipeline
+type: docker
 name: manifest
 
 platform:
@@ -142,6 +228,7 @@ platform:
 depends_on:
   - build-linux-amd64
   - build-windows-1809-amd64
+  - build-windows-ltsc2022-amd64
 
 steps:
 
