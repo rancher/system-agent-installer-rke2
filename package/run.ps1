@@ -95,9 +95,7 @@ if ((Get-Service -Name $rke2ServiceName -ErrorAction SilentlyContinue)) {
 }
 
 # if service doesn't exist, then install, otherwise check the binary and determine if it needs to be reinstalled, otherwise fall through to restart, skil enable, skip start
-$env:INSTALL_RKE2_ARTIFACT_PATH = $env:CATTLE_AGENT_EXECUTION_PWD
-$env:INSTALL_RKE2_TAR_PREFIX = $SA_INSTALL_PREFIX 
-./installer.ps1
+./installer.ps1 -TarPrefix $SA_INSTALL_PREFIX  -ArtifactPath $env:CATTLE_AGENT_EXECUTION_PWD
 
 if ($env:RESTART_STAMP) {
     Set-Content -Path $env:RESTART_STAMP_FILE -Value $env:RESTART_STAMP
