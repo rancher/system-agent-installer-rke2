@@ -80,7 +80,7 @@ if ($PROXY_ENV_INFO) {
 
 $newHash = Get-StringHash -Value $($newEnv | Out-String)
 if ($newEnv -and ($newHash -ne $currentHash)) {
-    Set-ItemProperty HKLM:SYSTEM\CurrentControlSet\Services\$rke2ServiceName -Name Environment -PropertyType MultiString -Value $fullEnv
+    Set-ItemProperty HKLM:SYSTEM\CurrentControlSet\Services\$rke2ServiceName -Name Environment -PropertyType MultiString -Value $newEnv
     $RESTART = $true
 }
 
