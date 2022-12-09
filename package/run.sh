@@ -6,7 +6,7 @@ SA_INSTALL_PREFIX="/usr/local"
 
 # check_target_mountpoint return success if the target directory is on a dedicated mount point
 check_target_mountpoint() {
-    mountpoint -q "${PREFIX}"
+    mountpoint -q "${SA_INSTALL_PREFIX}"
 }
 
 # check_target_ro returns success if the target directory is read-only
