@@ -145,7 +145,16 @@ platform:
   arch: amd64
   version: 1809
 
+# Disable built-in clone as drone/git:windows-1809-amd64 pushed 1/4/2023 is now failing in Drone
+#clone:
+#  disable: true
+#
 steps:
+#
+#  - name: clone
+#    image: drone/git:windows-1809-amd64
+#    settings:
+#      depth: 1
 
   - name: download-windows-1809-amd64
     image: mcr.microsoft.com/windows/servercore:1809-amd64
