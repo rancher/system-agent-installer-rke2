@@ -30,7 +30,12 @@ if check_target_mountpoint || check_target_ro; then
     SA_INSTALL_PREFIX="/opt/rke2"
 fi
 
-SYSTEMD_BASE_PATH="${SA_INSTALL_PREFIX}/lib/systemd/system"
+if [ "${SA_INSTALL_PREFIX}" == "/opt/rke2" ]; then
+    SYSTEMD_BASE_PATH="/etc/systemd/system"
+else
+    SYSTEMD_BASE_PATH="${SA_INSTALL_PREFIX}/lib/systemd/system"
+fi
+
 RKE2_SA_ENV_FILE_PATH="${SAI_FILE_DIR}/${RKE2_SA_ENV_FILE_NAME}"
 RKE2_SA_ENV_SRV_REF="EnvironmentFile=-${RKE2_SA_ENV_FILE_PATH}"
 
