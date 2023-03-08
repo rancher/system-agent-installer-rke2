@@ -30,7 +30,7 @@ if check_target_mountpoint || check_target_ro; then
     SA_INSTALL_PREFIX="/opt/rke2"
 fi
 
-if [ "${SA_INSTALL_PREFIX}" == "/opt/rke2" ]; then
+if [ "${SA_INSTALL_PREFIX}" = "/opt/rke2" ]; then
     SYSTEMD_BASE_PATH="/etc/systemd/system"
 else
     SYSTEMD_BASE_PATH="${SA_INSTALL_PREFIX}/lib/systemd/system"
