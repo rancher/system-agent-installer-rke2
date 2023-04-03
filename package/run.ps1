@@ -93,11 +93,14 @@ if ($newEnv -and ($newHash -ne $currentHash)) {
 Write-LogInfo "Checking if RKE2 agent service exists"
 if ((Get-Service -Name $rke2ServiceName -ErrorAction SilentlyContinue)) {
     Write-LogInfo "RKE2 agent service found, stopping now"
+    # allow some time for the service to come up, so we can  then properly stop it
+    Start-Sleep -s 5
     Stop-Service -Name $rke2ServiceName
     while ((Get-Service $rke2ServiceName).Status -ne 'Stopped') {
         Write-LogInfo "Waiting for RKE2 agent service to stop"
-        Start-Sleep -s 5
     }
+    # allow time for all processes to stop, and for ports to be freed
+    Start-Sleep -s 30
 }
 
 # if service doesn't exist, then install, otherwise check the binary and determine if it needs to be reinstalled, otherwise fall through to restart, skil enable, skip start
@@ -125,12 +128,70 @@ if ($env:INSTALL_RKE2_SKIP_START -and ($env:INSTALL_RKE2_SKIP_START -eq $true)) 
     exit 0
 }
 
-if ((Get-Service -Name $rke2ServiceName -ErrorAction SilentlyContinue)) {
-    if ((Get-Service $rke2ServiceName).Status -eq 'Stopped') {
-        Write-LogInfo "Starting for RKE2 agent service"
-        Start-Service -Name $rke2ServiceName
-    } 
-    elseif (($RESTART = $true) -and ((Get-Service $rke2ServiceName).Status -eq 'Running')) {
-        Restart-Service -Name $rke2ServiceName
+
+if ((Get-Service -Name $rke2ServiceName -ErrorAction SilentlyContinue))
+{
+    $successfulStart = $false
+    $maxAttempts = 2
+    For ($attempts = 0; $attempts -le $maxAttempts; $attempts++) {
+        if ((Get-Service $rke2ServiceName).Status -eq 'Stopped')
+        {
+            try
+            {
+                Write-LogInfo "Attempting to start $rke2ServiceName"
+                Start-Service -Name $rke2ServiceName
+                $successfulStart = $true
+                break
+            }
+            catch
+            {
+                # The failure to start may be temporary, give the service some time to see if it can come up on its own.
+                # If it still cannot start after this time, we should manually attempt to start it again, as this would indicate
+                # that the service never properly transitioned into the running state and therefore will not be automatically
+                # restarted by the Windows Service Manager.
+                # see https://learn.microsoft.com/en-us/windows/win32/api/winsvc/ns-winsvc-service_failure_actionsa
+                #     https://learn.microsoft.com/en-us/windows/win32/services/service-status-transitions
+                #     https://github.com/rancher/rke2/blob/master/pkg/windows/service_windows.go#L26-L49
+                # RKE2 is configured to restart every 30 seconds after a failure is detected during the running state
+                #     https://github.com/rancher/rke2/blob/master/pkg/cli/cmds/agent_service_windows.go#L102-L106
+                For ($waitAttempts = 0; $waitAttempts -lt 3; $waitAttempts++) {
+                    Start-Sleep -s 35
+                    if ((Get-Service $rke2ServiceName).Status -eq 'Running')
+                    {
+                        $successfulStart = $true
+                        break
+                    }
+                    else
+                    {
+                        Write-LogInfo "Still waiting for $rke2ServiceName to start..."
+                    }
+                }
+            }
+        }
+        elseif (($RESTART = $true) -and ((Get-Service $rke2ServiceName).Status -eq 'Running'))
+        {
+            # if the WSM throws an error on restart we should try again to make sure
+            # the service actually gets restarted. In some cases a failure to restart will
+            # transition the service into a 'stopped' state, at which point we will start it again
+            # in the above condition.
+            try
+            {
+                Write-LogInfo "Restarting $rke2ServiceName"
+                Restart-Service -Name $rke2ServiceName
+                $successfulStart = $true
+            } catch {
+                Start-Sleep -s 5
+            }
+        }
+    }
+
+    if ($successfulStart -eq $true)
+    {
+        Write-LogInfo "Succesfully started $rke2ServiceName"
+    } else {
+        $rke2Logs = $(Get-EventLog -LogName Application -Source rke2 | Select-Object ReplacementStrings | Format-Table -Wrap | Out-String)
+        Write-LogError "$rke2ServiceName service could not be started properly"
+        # Print out the RKE2 logs so we can do a deeper analysis of what went wrong.
+        Write-LogFatal "RKE2 Logs: $rke2Logs"
     }
 }
