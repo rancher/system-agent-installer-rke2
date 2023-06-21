@@ -93,17 +93,27 @@ if ($newEnv -and ($newHash -ne $currentHash)) {
 Write-LogInfo "Checking if RKE2 agent service exists"
 if ((Get-Service -Name $rke2ServiceName -ErrorAction SilentlyContinue)) {
     Write-LogInfo "RKE2 agent service found, stopping now"
-    # allow some time for the service to come up, so we can  then properly stop it
-    Start-Sleep -s 5
     Stop-Service -Name $rke2ServiceName
     while ((Get-Service $rke2ServiceName).Status -ne 'Stopped') {
         Write-LogInfo "Waiting for RKE2 agent service to stop"
     }
-    # allow time for all processes to stop, and for ports to be freed
-    Start-Sleep -s 30
+    Start-Sleep -s 5
+
+    # Ensure a stopped service does not have lingering processes.
+    if (Get-Process rke2 -ErrorAction SilentlyContinue) {
+        Stop-Process -Name "rke2" -ErrorAction SilentlyContinue
+    }
+
+    if (Get-Process containerd -ErrorAction SilentlyContinue) {
+        Stop-Process -Name "containerd" -ErrorAction SilentlyContinue
+    }
+
+    if (Get-Process calico-node -ErrorAction SilentlyContinue) {
+        Stop-Process -Name "calico-node" -ErrorAction SilentlyContinue
+    }
 }
 
-# if service doesn't exist, then install, otherwise check the binary and determine if it needs to be reinstalled, otherwise fall through to restart, skil enable, skip start
+# if service doesn't exist, then install, otherwise check the binary and determine if it needs to be reinstalled, otherwise fall through to restart, skip enable, skip start
 ./installer.ps1 -TarPrefix $SA_INSTALL_PREFIX  -ArtifactPath $env:CATTLE_AGENT_EXECUTION_PWD
 
 if ($env:RESTART_STAMP) {
@@ -132,57 +142,42 @@ if ($env:INSTALL_RKE2_SKIP_START -and ($env:INSTALL_RKE2_SKIP_START -eq $true)) 
 if ((Get-Service -Name $rke2ServiceName -ErrorAction SilentlyContinue))
 {
     $successfulStart = $false
-    $maxAttempts = 2
-    For ($attempts = 0; $attempts -le $maxAttempts; $attempts++) {
-        if ((Get-Service $rke2ServiceName).Status -eq 'Stopped')
+    if ((Get-Service $rke2ServiceName).Status -eq 'Stopped')
+    {
+        try
         {
-            try
-            {
-                Write-LogInfo "Attempting to start $rke2ServiceName"
-                Start-Service -Name $rke2ServiceName
-                $successfulStart = $true
-                break
-            }
-            catch
-            {
-                # The failure to start may be temporary, give the service some time to see if it can come up on its own.
-                # If it still cannot start after this time, we should manually attempt to start it again, as this would indicate
-                # that the service never properly transitioned into the running state and therefore will not be automatically
-                # restarted by the Windows Service Manager.
-                # see https://learn.microsoft.com/en-us/windows/win32/api/winsvc/ns-winsvc-service_failure_actionsa
-                #     https://learn.microsoft.com/en-us/windows/win32/services/service-status-transitions
-                #     https://github.com/rancher/rke2/blob/master/pkg/windows/service_windows.go#L26-L49
-                # RKE2 is configured to restart every 30 seconds after a failure is detected during the running state
-                #     https://github.com/rancher/rke2/blob/master/pkg/cli/cmds/agent_service_windows.go#L102-L106
-                For ($waitAttempts = 0; $waitAttempts -lt 3; $waitAttempts++) {
-                    Start-Sleep -s 35
-                    if ((Get-Service $rke2ServiceName).Status -eq 'Running')
-                    {
-                        $successfulStart = $true
-                        break
-                    }
-                    else
-                    {
-                        Write-LogInfo "Still waiting for $rke2ServiceName to start..."
-                    }
+            Write-LogInfo "Attempting to start $rke2ServiceName"
+            Start-Service -Name $rke2ServiceName
+            $successfulStart = $true
+        }
+        catch
+        {
+            # The failure to start may be temporary, give the service some time to see if it can come up on its own.
+            # see https://learn.microsoft.com/en-us/windows/win32/api/winsvc/ns-winsvc-service_failure_actionsa
+            #     https://learn.microsoft.com/en-us/windows/win32/services/service-status-transitions
+            #     https://github.com/rancher/rke2/blob/master/pkg/windows/service_windows.go#L26-L49
+            # RKE2 is configured to restart every 30 seconds, regardless of how the service terminated.
+            #     https://github.com/rancher/rke2/blob/master/pkg/cli/cmds/agent_service_windows.go#L102-L106
+            For ($waitAttempts = 0; $waitAttempts -lt 6; $waitAttempts++) {
+                Start-Sleep -s 35
+                if ((Get-Service $rke2ServiceName).Status -eq 'Running')
+                {
+                    $successfulStart = $true
+                    Write-LogInfo "$rke2ServiceName is running"
+                    break
+                }
+                else
+                {
+                    Write-LogInfo "Still waiting for $rke2ServiceName to start..."
                 }
             }
         }
-        elseif (($RESTART = $true) -and ((Get-Service $rke2ServiceName).Status -eq 'Running'))
-        {
-            # if the WSM throws an error on restart we should try again to make sure
-            # the service actually gets restarted. In some cases a failure to restart will
-            # transition the service into a 'stopped' state, at which point we will start it again
-            # in the above condition.
-            try
-            {
-                Write-LogInfo "Restarting $rke2ServiceName"
-                Restart-Service -Name $rke2ServiceName
-                $successfulStart = $true
-            } catch {
-                Start-Sleep -s 5
-            }
-        }
+    }
+    elseif (($RESTART = $true) -and ((Get-Service $rke2ServiceName).Status -eq 'Running'))
+    {
+        Write-LogInfo "Restarting $rke2ServiceName"
+        Restart-Service -Name $rke2ServiceName
+        $successfulStart = $true
     }
 
     if ($successfulStart -eq $true)
