@@ -46,6 +46,41 @@ function Get-StringHash {
     return (Get-FileHash -InputStream $stringAsStream -Algorithm SHA256).Hash.ToLower()
 }
 
+# stops the RKE2 process as well as other processes spawned from rke2
+function Stop-RKE2-Processes () {
+    $rke2ProcessNames = @('rke2', 'kube-proxy', 'kubelet', 'containerd', 'calico-node')
+    foreach ($processName in $rke2ProcessNames) {
+        Write-LogInfo "Checking if $processName process exists"
+        if (Get-Process -Name $processName -ErrorAction SilentlyContinue) {
+            Write-LogInfo "$processName process found, stopping now"
+            Stop-Process -Name $processName
+        }
+    }
+
+    # ensure all processes have exited
+    $waitLimit = 3
+    foreach ($processName in $rke2ProcessNames) {
+        $currentWait = 0
+        while ($true) {
+            # check if the process still exists
+            Get-Process -Name $processName -ErrorAction SilentlyContinue -ErrorVariable processNotFoundError | out-null
+            if ($processNotFoundError) {
+                Write-LogInfo "$processName exited successfully"
+                break
+            }
+
+            # wait for a bit for the process to exit
+            Write-LogInfo "Waiting for $processName process to stop"
+            $currentWait++
+            if ($waitLimit -eq $currentWait) {
+                Write-LogFatal "Failed to stop all RKE2 processes: timed out waiting for $processName to exit."
+                break
+            }
+            Start-Sleep -s 5
+        }
+    }
+}
+
 $rke2ServiceName = "rke2"
 $SA_INSTALL_PREFIX = "c:/usr/local"
 $SAI_FILE_DIR = "c:/var/lib/rancher/rke2/system-agent-installer"
@@ -97,20 +132,7 @@ if ((Get-Service -Name $rke2ServiceName -ErrorAction SilentlyContinue)) {
     while ((Get-Service $rke2ServiceName).Status -ne 'Stopped') {
         Write-LogInfo "Waiting for RKE2 agent service to stop"
     }
-    Start-Sleep -s 5
-
-    # Ensure a stopped service does not have lingering processes.
-    if (Get-Process rke2 -ErrorAction SilentlyContinue) {
-        Stop-Process -Name "rke2" -ErrorAction SilentlyContinue
-    }
-
-    if (Get-Process containerd -ErrorAction SilentlyContinue) {
-        Stop-Process -Name "containerd" -ErrorAction SilentlyContinue
-    }
-
-    if (Get-Process calico-node -ErrorAction SilentlyContinue) {
-        Stop-Process -Name "calico-node" -ErrorAction SilentlyContinue
-    }
+    Stop-RKE2-Processes
 }
 
 # if service doesn't exist, then install, otherwise check the binary and determine if it needs to be reinstalled, otherwise fall through to restart, skip enable, skip start
