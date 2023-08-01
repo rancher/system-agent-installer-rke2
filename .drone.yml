@@ -62,6 +62,67 @@ steps:
 ---
 kind: pipeline
 type: docker
+name: build-linux-arm64
+
+platform:
+  os: linux
+  arch: arm64
+
+steps:
+
+  - name: download-linux-arm64
+    image: registry.suse.com/suse/sle15:15.5.36.5.20
+    environment:
+      ARCH: arm64
+    commands:
+      - zypper -n install curl jq git
+      - scripts/download
+
+  - name: build-linux-arm64
+    image: plugins/docker
+    settings:
+      purge: false
+      dry_run: true
+      build_args:
+        - ARCH=arm64
+        - "VERSION=${DRONE_TAG/+/-}"
+      custom_dns: 1.1.1.1
+      dockerfile: package/Dockerfile
+      password:
+        from_secret: docker_password
+      repo: rancher/system-agent-installer-rke2
+      tag: "${DRONE_COMMIT/+/-}-linux-arm64"
+      username:
+        from_secret: docker_username
+    when:
+      event:
+        - pull_request
+
+  - name: publish-linux-arm64
+    image: plugins/docker
+    settings:
+      purge: false
+      build_args:
+        - ARCH=arm64
+        - "VERSION=${DRONE_TAG/+/-}"
+      custom_dns: 1.1.1.1
+      dockerfile: package/Dockerfile
+      password:
+        from_secret: docker_password
+      repo: rancher/system-agent-installer-rke2
+      tag: "${DRONE_TAG/+/-}-linux-arm64"
+      username:
+        from_secret: docker_username
+    when:
+      instance:
+        - drone-publish.rancher.io
+      ref:
+        - refs/tags/*
+      event:
+        - tag
+---
+kind: pipeline
+type: docker
 name: build-linux-s390x
 
 # Hack needed for s390x: https://gist.github.com/colstrom/c2f359f72658aaabb44150ac20b16d7c#gistcomment-3858388
