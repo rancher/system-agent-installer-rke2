@@ -12,6 +12,12 @@ mkdir -p artifacts
 if [ -z "${LOCAL_ARTIFACTS}" ]; then
     curl -fL https://raw.githubusercontent.com/rancher/rke2/master/install.sh > artifacts/installer.sh
     chmod +x artifacts/installer.sh
+
+    if [[ "${ARCH}" = "arm64" ]] && [[ "${VERSION}" =~ ^v1\.(20|24|25|26)\. ]]; then
+        echo "Skipping arm64 - not supported for this version."
+        exit
+    fi
+
     pushd artifacts
     curl -fL -O -R https://github.com/rancher/rke2/releases/download/${URI_VERSION}/rke2.linux-${ARCH}.tar.gz
     curl -fL -O -R https://github.com/rancher/rke2/releases/download/${URI_VERSION}/sha256sum-${ARCH}.txt
