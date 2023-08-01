@@ -360,6 +360,7 @@ platform:
   arch: amd64
 depends_on:
   - build-linux-amd64
+  - build-linux-arm64
   - build-windows-1809-amd64
   - build-windows-ltsc2022-amd64
   - build-linux-s390x
