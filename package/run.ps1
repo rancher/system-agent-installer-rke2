@@ -46,41 +46,6 @@ function Get-StringHash {
     return (Get-FileHash -InputStream $stringAsStream -Algorithm SHA256).Hash.ToLower()
 }
 
-# stops the RKE2 process as well as other processes spawned from rke2
-function Stop-RKE2-Processes () {
-    $rke2ProcessNames = @('rke2', 'kube-proxy', 'kubelet', 'containerd', 'calico-node')
-    foreach ($processName in $rke2ProcessNames) {
-        Write-LogInfo "Checking if $processName process exists"
-        if (Get-Process -Name $processName -ErrorAction SilentlyContinue) {
-            Write-LogInfo "$processName process found, stopping now"
-            Stop-Process -Name $processName
-        }
-    }
-
-    # ensure all processes have exited
-    $waitLimit = 3
-    foreach ($processName in $rke2ProcessNames) {
-        $currentWait = 0
-        while ($true) {
-            # check if the process still exists
-            Get-Process -Name $processName -ErrorAction SilentlyContinue -ErrorVariable processNotFoundError | out-null
-            if ($processNotFoundError) {
-                Write-LogInfo "$processName exited successfully"
-                break
-            }
-
-            # wait for a bit for the process to exit
-            Write-LogInfo "Waiting for $processName process to stop"
-            $currentWait++
-            if ($waitLimit -eq $currentWait) {
-                Write-LogFatal "Failed to stop all RKE2 processes: timed out waiting for $processName to exit."
-                break
-            }
-            Start-Sleep -s 5
-        }
-    }
-}
-
 $rke2ServiceName = "rke2"
 $SA_INSTALL_PREFIX = "c:/usr/local"
 $SAI_FILE_DIR = "c:/var/lib/rancher/rke2/system-agent-installer"
@@ -131,11 +96,11 @@ if ((Get-Service -Name $rke2ServiceName -ErrorAction SilentlyContinue)) {
     Stop-Service -Name $rke2ServiceName
     while ((Get-Service $rke2ServiceName).Status -ne 'Stopped') {
         Write-LogInfo "Waiting for RKE2 agent service to stop"
+        Start-Sleep -s 5
     }
-    Stop-RKE2-Processes
 }
 
-# if service doesn't exist, then install, otherwise check the binary and determine if it needs to be reinstalled, otherwise fall through to restart, skip enable, skip start
+# if service doesn't exist, then install, otherwise check the binary and determine if it needs to be reinstalled, otherwise fall through to restart, skil enable, skip start
 ./installer.ps1 -TarPrefix $SA_INSTALL_PREFIX  -ArtifactPath $env:CATTLE_AGENT_EXECUTION_PWD
 
 if ($env:RESTART_STAMP) {
@@ -160,55 +125,12 @@ if ($env:INSTALL_RKE2_SKIP_START -and ($env:INSTALL_RKE2_SKIP_START -eq $true)) 
     exit 0
 }
 
-
-if ((Get-Service -Name $rke2ServiceName -ErrorAction SilentlyContinue))
-{
-    $successfulStart = $false
-    if ((Get-Service $rke2ServiceName).Status -eq 'Stopped')
-    {
-        try
-        {
-            Write-LogInfo "Attempting to start $rke2ServiceName"
-            Start-Service -Name $rke2ServiceName
-            $successfulStart = $true
-        }
-        catch
-        {
-            # The failure to start may be temporary, give the service some time to see if it can come up on its own.
-            # see https://learn.microsoft.com/en-us/windows/win32/api/winsvc/ns-winsvc-service_failure_actionsa
-            #     https://learn.microsoft.com/en-us/windows/win32/services/service-status-transitions
-            #     https://github.com/rancher/rke2/blob/master/pkg/windows/service_windows.go#L26-L49
-            # RKE2 is configured to restart every 30 seconds, regardless of how the service terminated.
-            #     https://github.com/rancher/rke2/blob/master/pkg/cli/cmds/agent_service_windows.go#L102-L106
-            For ($waitAttempts = 0; $waitAttempts -lt 6; $waitAttempts++) {
-                Start-Sleep -s 35
-                if ((Get-Service $rke2ServiceName).Status -eq 'Running')
-                {
-                    $successfulStart = $true
-                    Write-LogInfo "$rke2ServiceName is running"
-                    break
-                }
-                else
-                {
-                    Write-LogInfo "Still waiting for $rke2ServiceName to start..."
-                }
-            }
-        }
+if ((Get-Service -Name $rke2ServiceName -ErrorAction SilentlyContinue)) {
+    if ((Get-Service $rke2ServiceName).Status -eq 'Stopped') {
+        Write-LogInfo "Starting for RKE2 agent service"
+        Start-Service -Name $rke2ServiceName
     }
-    elseif (($RESTART = $true) -and ((Get-Service $rke2ServiceName).Status -eq 'Running'))
-    {
-        Write-LogInfo "Restarting $rke2ServiceName"
+    elseif (($RESTART = $true) -and ((Get-Service $rke2ServiceName).Status -eq 'Running')) {
         Restart-Service -Name $rke2ServiceName
-        $successfulStart = $true
-    }
-
-    if ($successfulStart -eq $true)
-    {
-        Write-LogInfo "Succesfully started $rke2ServiceName"
-    } else {
-        $rke2Logs = $(Get-EventLog -LogName Application -Source rke2 | Select-Object ReplacementStrings | Format-Table -Wrap | Out-String)
-        Write-LogError "$rke2ServiceName service could not be started properly"
-        # Print out the RKE2 logs so we can do a deeper analysis of what went wrong.
-        Write-LogFatal "RKE2 Logs: $rke2Logs"
     }
 }
