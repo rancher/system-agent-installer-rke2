@@ -81,11 +81,11 @@ if ($PROXY_ENV_INFO) {
 $newHash = Get-StringHash -Value $($newEnv | Out-String)
 if ($newEnv -and ($newHash -ne $currentHash)) {
     if(Test-Path -Path HKLM:SYSTEM\CurrentControlSet\Services\$rke2ServiceName) {
-        Set-ItemProperty HKLM:SYSTEM\CurrentControlSet\Services\$rke2ServiceName -Name Environment -Value $([string]$newEnv)
+        Set-ItemProperty HKLM:SYSTEM\CurrentControlSet\Services\$rke2ServiceName -Name Environment -Value $newEnv
     }
     else {
         New-Item HKLM:SYSTEM\CurrentControlSet\Services\$rke2ServiceName
-        New-ItemProperty HKLM:SYSTEM\CurrentControlSet\Services\$rke2ServiceName -Name Environment -PropertyType MultiString -Value $([string]$newEnv)
+        New-ItemProperty HKLM:SYSTEM\CurrentControlSet\Services\$rke2ServiceName -Name Environment -PropertyType MultiString -Value $newEnv
     }
     $RESTART = $true
 }
