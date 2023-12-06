@@ -123,82 +123,6 @@ steps:
 ---
 kind: pipeline
 type: docker
-name: build-linux-s390x
-
-# Hack needed for s390x: https://gist.github.com/colstrom/c2f359f72658aaabb44150ac20b16d7c#gistcomment-3858388
-node:
-  arch: s390x
-
-platform:
-  os: linux
-  arch: amd64
-
-steps:
-
-  - name: download-linux-s390x
-    image: registry.suse.com/suse/sle15:15.3.17.8.1
-    environment:
-      ARCH: s390x
-    commands:
-      - zypper -n install curl jq git
-      - scripts/download
-
-  - name: build-linux-s390x
-    image: rancher/drone-images:docker-s390x
-    volumes:
-    - name: docker
-      path: /var/run/docker.sock
-    settings:
-      purge: false
-      dry_run: true
-      build_args:
-        - ARCH=s390x
-        - "VERSION=${DRONE_TAG/+/-}"
-      custom_dns: 1.1.1.1
-      dockerfile: package/Dockerfile
-      password:
-        from_secret: docker_password
-      repo: rancher/system-agent-installer-rke2
-      tag: "${DRONE_COMMIT/+/-}-linux-s390x"
-      username:
-        from_secret: docker_username
-    when:
-      event:
-        - pull_request
-
-  - name: publish-linux-s390x
-    image: rancher/drone-images:docker-s390x
-    volumes:
-    - name: docker
-      path: /var/run/docker.sock
-    settings:
-      purge: false
-      build_args:
-        - ARCH=s390x
-        - "VERSION=${DRONE_TAG/+/-}"
-      custom_dns: 1.1.1.1
-      dockerfile: package/Dockerfile
-      password:
-        from_secret: docker_password
-      repo: rancher/system-agent-installer-rke2
-      tag: "${DRONE_TAG/+/-}-linux-s390x"
-      username:
-        from_secret: docker_username
-    when:
-      instance:
-        - drone-publish.rancher.io
-      ref:
-        - refs/tags/*
-      event:
-        - tag
-
-volumes:
-- name: docker
-  host:
-    path: /var/run/docker.sock
----
-kind: pipeline
-type: docker
 name: build-windows-1809-amd64
 
 platform:
@@ -363,7 +287,6 @@ depends_on:
   - build-linux-arm64
   - build-windows-1809-amd64
   - build-windows-ltsc2022-amd64
-  - build-linux-s390x
 
 steps:
 
