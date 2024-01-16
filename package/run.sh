@@ -2,8 +2,6 @@
 
 set -x -e
 
-SA_INSTALL_PREFIX="/usr/local"
-
 # check_target_mountpoint return success if the target directory is on a dedicated mount point
 check_target_mountpoint() {
     mountpoint -q "${SA_INSTALL_PREFIX}"
@@ -25,9 +23,12 @@ if [ ! -d "${SAI_FILE_DIR}" ]; then
     mkdir -p "${SAI_FILE_DIR}"
 fi
 
-if check_target_mountpoint || check_target_ro; then
-    echo "${SA_INSTALL_PREFIX} is ro or a mount point"
-    SA_INSTALL_PREFIX="/opt/rke2"
+if [ -z "${SA_INSTALL_PREFIX}" ]; then
+    SA_INSTALL_PREFIX="/usr/local"
+    if check_target_mountpoint || check_target_ro; then
+        echo "${SA_INSTALL_PREFIX} is ro or a mount point"
+        SA_INSTALL_PREFIX="/opt/rke2"
+    fi
 fi
 
 if [ "${SA_INSTALL_PREFIX}" = "/opt/rke2" ]; then
@@ -79,7 +80,7 @@ if [ -z "${INSTALL_RKE2_TYPE}" ]; then
     INSTALL_RKE2_TYPE="${INSTALL_RKE2_EXEC:-server}"
 fi
 
-if ! grep -q "${RKE2_SA_ENV_SRV_REF}" "${SYSTEMD_BASE_PATH}/rke2-${INSTALL_RKE2_TYPE}.service" ; then 
+if ! grep -q "${RKE2_SA_ENV_SRV_REF}" "${SYSTEMD_BASE_PATH}/rke2-${INSTALL_RKE2_TYPE}.service" ; then
     echo "${RKE2_SA_ENV_SRV_REF}" >> "${SYSTEMD_BASE_PATH}/rke2-${INSTALL_RKE2_TYPE}.service"
 fi
 
