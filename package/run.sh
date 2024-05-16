@@ -15,9 +15,9 @@ check_target_ro() {
     test $? -ne 0
 }
 
-mkdir -p /var/lib/rancher/rke2
+mkdir -p ${RKE2_DATA_DIR}
 
-SAI_FILE_DIR="/var/lib/rancher/rke2/system-agent-installer"
+SAI_FILE_DIR="${RKE2_DATA_DIR}/system-agent-installer"
 RESTART_STAMP_FILE="${SAI_FILE_DIR}/rke2_restart_stamp"
 RKE2_SA_ENV_FILE_NAME="rke2-sa.env"
 
