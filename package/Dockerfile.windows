@@ -2,8 +2,5 @@ ARG SERVERCORE_VERSION
 
 FROM mcr.microsoft.com/windows/nanoserver:${SERVERCORE_VERSION}
 
-ARG RKE2_DATA_DIR
-ENV RKE2_DATA_DIR=${RKE2_DATA_DIR}
-
 COPY package/run.ps1 /bin/run.ps1
 COPY artifacts/* /bin/

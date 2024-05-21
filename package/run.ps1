@@ -19,7 +19,7 @@ function Write-LogFatal {
     exit 255
 }
 
-function New-Directory {
+function New-Directroy {
     [CmdletBinding()]
     param (
         [Parameter()]
@@ -48,14 +48,13 @@ function Get-StringHash {
 
 $rke2ServiceName = "rke2"
 $SA_INSTALL_PREFIX = "c:/usr/local"
-$RKE2_DATA_DIR = if ($env:RKE2_DATA_DIR) { $env:RKE2_DATA_DIR } else { "c:/var/lib/rancher/rke2" };
-$SAI_FILE_DIR = "$RKE2_DATA_DIR/system-agent-installer"
+$SAI_FILE_DIR = "c:/var/lib/rancher/rke2/system-agent-installer"
 $RESTART_STAMP_FILE = "$SAI_FILE_DIR/rke2_restart_stamp"
 $PRIOR_RESTART_STAMP = ""
 $RESTART = $false
 
-New-Directory -Path "$RKE2_DATA_DIR"
-New-Directory -Path "$SAI_FILE_DIR"
+New-Directroy -Path "c:/var/lib/rancher/rke2"
+New-Directroy $SAI_FILE_DIR
 
 if (Test-Path $RESTART_STAMP_FILE) {
     $PRIOR_RESTART_STAMP = Get-Content -Path $RESTART_STAMP_FILE
