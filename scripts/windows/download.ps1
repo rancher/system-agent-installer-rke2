@@ -1,20 +1,18 @@
 $ErrorActionPreference = 'Stop'
 
-.$PSScriptRoot/version.ps1
+Import-Module -Name @(
+    "$PSScriptRoot\utils.psm1"
+) -WarningAction Ignore -Force
 
-Set-Location $PSScriptRoot/../..
+$e = Get-Environment
+$arch = $e.arch
 
 # This script serves to download/stage the installer
 
-mkdir -p artifacts -f
-
 if (-not $env:LOCAL_ARTIFACTS) {
-    curl.exe -fL https://raw.githubusercontent.com/rancher/rke2/master/install.ps1 > artifacts/installer.ps1
-    Push-Location artifacts
-    curl.exe -fL -O -R https://github.com/rancher/rke2/releases/download/$env:URI_VERSION/rke2.windows-$env:ARCH.tar.gz
-    curl.exe -fL -O -R https://github.com/rancher/rke2/releases/download/$env:URI_VERSION/sha256sum-$env:ARCH.txt
-    Pop-Location
-
+    Get-RKE2Artifact "installer.ps1"
+    Get-RKE2Artifact "rke2.windows-$arch.tar.gz"
+    Get-RKE2Artifact "sha256sum-$arch.txt"
 }
 else {
     Copy-Item local/* artifacts

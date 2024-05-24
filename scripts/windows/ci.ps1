@@ -6,3 +6,5 @@ Import-Module -Name @(
 
 Run-Script download
 Run-Script package
+Run-Script publish
+Run-Script manifest

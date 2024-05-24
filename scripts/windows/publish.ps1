@@ -1,11 +1,14 @@
 $ErrorActionPreference = 'Stop'
 
-.$PSScriptRoot/version.ps1
+Import-Module -Name @(
+    "$PSScriptRoot\utils.psm1"
+) -WarningAction Ignore -Force
 
-Set-Location $PSScriptRoot/..
+Run-DockerLogin
 
-docker login -u $env:DOCKER_USERNAME -p $env:DOCKER_PASSWORD
+$e = Get-Environment
+$platformImage = $e.platform_image
 
-docker push $env:IMAGE-$env:OS-$env:ARCH
+docker push $platformImage
 
-Write-Host "Pushed $env:IMAGE-$env:OS-$env:ARCH"
+Write-Host "Pushed $platformImage"

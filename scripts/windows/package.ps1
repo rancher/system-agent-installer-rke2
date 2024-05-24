@@ -1,11 +1,13 @@
 $ErrorActionPreference = 'Stop'
 
-.$PSScriptRoot/version.ps1
+Import-Module -Name @(
+    "$PSScriptRoot\utils.psm1"
+) -WarningAction Ignore -Force
 
-Set-Location $PSScriptRoot/..
+$e = Get-Environment
+$platformImage = $e.platform_image
 
-$DOCKERFILE = package/Dockerfile.windows
+$windowsVersion = (Get-WindowsVersion)
 
-docker image build -f $DOCKERFILE -t $env:IMAGE-$env:OS-$env:ARCH .
-
-Write-Host "Built $env:IMAGE-$env:OS-$env:ARCH"
+docker build --build-arg SERVERCORE_VERSION=$windowsVersion -f "package/Dockerfile.windows" -t $platformImage .
+Log-Info "Built $platformImage"
