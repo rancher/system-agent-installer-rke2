@@ -17,6 +17,10 @@ TREE_STATE=clean
 COMMIT=${COMMIT:-${DRONE_COMMIT:-${GITHUB_SHA:-unknown}}}
 TAG=${TAG:-${DRONE_TAG:-$GITHUB_TAG}}
 
+if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
+  TAG="$GITHUB_REF_NAME"
+fi
+
 # If we're in a dapperized environment, we should be able to figure out what our current tag and commit are.
 if [ -z "${TAG}" ]; then
     if [ -d ${DAPPER_SOURCE}/.git ]; then
@@ -85,3 +89,8 @@ VERSION=$(sed -e 's/+/-/g' <<<"$VERSION")
 REPO=${REPO:-rancher}
 
 IMAGE=${REPO}/system-agent-installer-rke2:${VERSION}
+
+if [[ -n "$GITHUB_ENV" ]]; then
+    echo "URI_VERSION=$URI_VERSION" >> "$GITHUB_ENV"
+    echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+fi

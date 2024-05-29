@@ -1,0 +1,18 @@
+name: Create Tag on Dispatch
+
+on: [repository_dispatch]
+jobs:
+  Create-tag:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # needed for creating the GH release
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create Release
+        id: create_release
+        run: gh release create "${{ github.event.client_payload.tag }}" --title "Release ${{ github.event.client_payload.tag }}"
+

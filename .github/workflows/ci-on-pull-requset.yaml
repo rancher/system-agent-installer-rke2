@@ -1,0 +1,90 @@
+name: CI on Pull Request
+
+on:
+  pull_request:
+
+env:
+  IMAGE: rancher/system-agent-installer-rke2
+
+jobs:
+  test-build-linux:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    strategy:
+      matrix:
+        os: [ linux ]
+        arch: [ amd64, arm64 ]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Fix the not-a-git-repository issue
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
+      - name: Set environment variables
+        run: |
+          echo "ARCH=${{ matrix.arch }}" >> "$GITHUB_ENV"
+          echo "OS=${{ matrix.os }}"     >> "$GITHUB_ENV"
+
+      - name: Download installer
+        run: scripts/download
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        id: build
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: package/Dockerfile
+          push: false
+          load: true
+          tags: "${{ env.IMAGE }}:${{ env.VERSION }}-${{ env.OS }}-${{ env.ARCH }}"
+          platforms: "${{ env.OS }}/${{ env.ARCH }}"
+
+      - name: Inspect image
+        run: docker inspect "${{ env.IMAGE }}:${{ env.VERSION }}-${{ env.OS }}-${{ env.ARCH }}"
+
+  test_build-windows:
+    strategy:
+      matrix:
+        include:
+          - SERVERCORE_VERSION: 1809
+            TAG_SUFFIX: windows-1809-amd64
+            RUNNER:  windows-2019
+          - SERVERCORE_VERSION: ltsc2022
+            TAG_SUFFIX: windows-ltsc2022-amd64
+            RUNNER:  windows-2022
+    runs-on: ${{ matrix.RUNNER }}
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Fix the not-a-git-repository issue
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
+      - name: Set environment variables
+        run: |
+          "ARCH=amd64" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - name: Download installer
+        run: scripts/windows/download.ps1
+
+      - name: Build Docker image
+        run: |
+          docker image build `
+          -f package/Dockerfile.windows `
+          --build-arg SERVERCORE_VERSION=${{ matrix.SERVERCORE_VERSION }} `
+          -t ${{ env.IMAGE }}:${{ env.VERSION }}-${{ matrix.TAG_SUFFIX }} . 
+
+      - name: Inspect image
+        run: docker inspect ${{ env.IMAGE }}:${{ env.VERSION }}-${{ matrix.TAG_SUFFIX }}
