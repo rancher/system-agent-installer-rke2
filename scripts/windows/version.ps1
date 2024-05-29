@@ -12,6 +12,14 @@ $TREE_STATE = "clean"
 $COMMIT = $env:DRONE_COMMIT
 $TAG = $env:DRONE_TAG
 
+if (-not $COMMIT -and $env:GITHUB_SHA) {
+    $COMMIT = $env:GITHUB_SHA
+}
+
+if ( $env:GITHUB_REF_TYPE -eq "tag"){
+     $TAG = $env:GITHUB_REF_NAME
+}
+
 if (-not $TAG) {
     if (Test-Path -Path $env:DAPPER_SOURCE\.git) {
         Push-Location $env:DAPPER_SOURCE
@@ -82,3 +90,8 @@ $env:VERSION = $VERSION
 $env:COMMIT = $COMMIT
 $env:REPO = "rancher"
 $env:IMAGE = "$REPO/system-agent-installer-rke2:$VERSION"
+
+if ( $env:GITHUB_ENV ) {
+    "VERSION=$env:VERSION" | Out-File -FilePath $env:GITHUB_ENV -Append
+    "URI_VERSION=$env:URI_VERSION" | Out-File -FilePath $env:GITHUB_ENV -Append
+}
