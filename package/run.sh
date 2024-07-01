@@ -3,6 +3,7 @@
 set -x -e
 
 SA_INSTALL_PREFIX="/usr/local"
+RKE2_DATA_DIR=${RKE2_DATA_DIR:-/var/lib/rancher/rke2}
 
 # check_target_mountpoint return success if the target directory is on a dedicated mount point
 check_target_mountpoint() {
