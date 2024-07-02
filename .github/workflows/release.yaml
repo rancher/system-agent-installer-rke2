@@ -147,11 +147,16 @@ jobs:
 
       - name: Create Docker manifest
         run: |
+          echo "creating the manifest list that contains only Windows tags to preserve the os.version metadata"
+          docker manifest create ${{ env.IMAGE }}:${{ env.VERSION }} \
+              ${{ env.IMAGE }}:${{ env.VERSION }}-windows-1809-amd64 \
+              ${{ env.IMAGE }}:${{ env.VERSION }}-windows-ltsc2022-amd64 
+          docker manifest push ${{ env.IMAGE }}:${{ env.VERSION }} 
+          
+          echo "updating the manifest list to append Linux tags"
           docker buildx imagetools create --tag ${{ env.IMAGE }}:${{ env.VERSION }} \
-          ${{ env.IMAGE }}:${{ env.VERSION }}-linux-amd64 \
-          ${{ env.IMAGE }}:${{ env.VERSION }}-linux-arm64 \
-          ${{ env.IMAGE }}:${{ env.VERSION }}-windows-1809-amd64 \
-          ${{ env.IMAGE }}:${{ env.VERSION }}-windows-ltsc2022-amd64
+              --append ${{ env.IMAGE }}:${{ env.VERSION }}-linux-amd64 \
+              --append ${{ env.IMAGE }}:${{ env.VERSION }}-linux-arm64
 
       - name: Inspect image
         run: docker buildx imagetools inspect ${{ env.IMAGE }}:${{ env.VERSION }}
