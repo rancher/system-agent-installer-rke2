@@ -5,19 +5,19 @@ if (-not $env:ARCH) {
 }
 $env:OS = "windows"
 
-$FALLBACK_VERSION = "v1.20.4+rke2r1"
+$FALLBACK_VERSION = "v1.30.2+rke2r1"
 
 # This version script expects either a tag of format: <rke2-version> or no tag at all.
 $TREE_STATE = "clean"
 $COMMIT = $env:DRONE_COMMIT
-$TAG = $env:DRONE_TAG
+$TAG = $env:TAG
 
 if (-not $COMMIT -and $env:GITHUB_SHA) {
     $COMMIT = $env:GITHUB_SHA
 }
 
 if ( $env:GITHUB_REF_TYPE -eq "tag"){
-     $TAG = $env:GITHUB_REF_NAME
+    $TAG = $env:GITHUB_REF_NAME
 }
 
 if (-not $TAG) {
@@ -45,7 +45,7 @@ if (-not $TAG) {
         if ($TREE_STATE -eq "clean") {
             $VERSION = $TAG # We will only accept the tag as our version if the tree state is clean and the tag is in fact defined.
         }
-    }    
+    }
 }
 else {
     $VERSION = $TAG
@@ -85,10 +85,16 @@ else {
 $env:URI_VERSION = [uri]::EscapeDataString($VERSION)
 $VERSION = $VERSION.Replace('+', '-')
 
-#export stuff out 
+#export stuff out
 $env:VERSION = $VERSION
 $env:COMMIT = $COMMIT
-$env:REPO = "rancher"
+
+if (-Not $env:REPO) {
+    $REPO = "rancher"
+} else {
+    $REPO = $env:REPO
+}
+
 $env:IMAGE = "$REPO/system-agent-installer-rke2:$VERSION"
 
 if ( $env:GITHUB_ENV ) {

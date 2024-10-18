@@ -55,10 +55,10 @@ jobs:
     strategy:
       matrix:
         include:
-          - SERVERCORE_VERSION: 1809
+          - NANOSERVER_VERSION: 1809
             TAG_SUFFIX: windows-1809-amd64
             RUNNER: windows-2019
-          - SERVERCORE_VERSION: ltsc2022
+          - NANOSERVER_VERSION: ltsc2022
             TAG_SUFFIX: windows-ltsc2022-amd64
             RUNNER: windows-2022
     runs-on: ${{ matrix.RUNNER }}
@@ -83,7 +83,7 @@ jobs:
         run: |
           docker image build `
           -f package/Dockerfile.windows `
-          --build-arg SERVERCORE_VERSION=${{ matrix.SERVERCORE_VERSION }} `
+          --build-arg NANOSERVER_VERSION=${{ matrix.NANOSERVER_VERSION }} `
           -t ${{ env.IMAGE }}:${{ env.VERSION }}-${{ matrix.TAG_SUFFIX }} . 
 
       - name: Inspect image
