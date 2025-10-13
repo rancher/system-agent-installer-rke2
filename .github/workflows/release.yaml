@@ -9,7 +9,7 @@ env:
   IMAGE: rancher/system-agent-installer-rke2
 
 permissions:
-    contents: write
+    contents: read
     id-token: write
 
 jobs:
@@ -42,10 +42,11 @@ jobs:
           secrets: |
             secret/data/github/repo/${{ github.repository }}/dockerhub/rancher/credentials username | DOCKER_USERNAME ;
             secret/data/github/repo/${{ github.repository }}/dockerhub/rancher/credentials password | DOCKER_PASSWORD ;
+            secret/data/github/repo/${{ github.repository }}/rancher-prime-registry/credentials primeribs |  PRIME_RIBS ;
             secret/data/github/repo/${{ github.repository }}/rancher-prime-registry/credentials registry |  PRIME_REGISTRY ;
             secret/data/github/repo/${{ github.repository }}/rancher-prime-registry/credentials username |  PRIME_REGISTRY_USERNAME ;
-            secret/data/github/repo/${{ github.repository }}/rancher-prime-stg-registry/credentials registry |  PRIME_STAGING_REGISTRY;
             secret/data/github/repo/${{ github.repository }}/rancher-prime-registry/credentials password |  PRIME_REGISTRY_PASSWORD ;
+            secret/data/github/repo/${{ github.repository }}/rancher-prime-stg-registry/credentials registry |  PRIME_STAGING_REGISTRY;
             secret/data/github/repo/${{ github.repository }}/rancher-prime-stg-registry/credentials username |  PRIME_STAGING_REGISTRY_USERNAME ;
             secret/data/github/repo/${{ github.repository }}/rancher-prime-stg-registry/credentials password |  PRIME_STAGING_REGISTRY_PASSWORD ;
 
@@ -70,6 +71,7 @@ jobs:
         env:
           GOARCH: ${{ matrix.arch }}
           GOOS: ${{ matrix.os }}
+          PRIME_RIBS: ${{ env.PRIME_RIBS }}
         with:
           image: "system-agent-installer-rke2"
           tag: ${{ github.ref_name }}
@@ -88,6 +90,7 @@ jobs:
         env:
           GOARCH: ${{ matrix.arch }}
           GOOS: ${{ matrix.os }}
+          PRIME_RIBS: ${{ env.PRIME_RIBS }}
         with:
           image: "system-agent-installer-rke2"
           tag: ${{ github.ref_name }}
@@ -132,6 +135,7 @@ jobs:
           secrets: |
             secret/data/github/repo/${{ github.repository }}/dockerhub/rancher/credentials username | DOCKER_USERNAME ;
             secret/data/github/repo/${{ github.repository }}/dockerhub/rancher/credentials password | DOCKER_PASSWORD ;
+            secret/data/github/repo/${{ github.repository }}/rancher-prime-registry/credentials primeribs |  PRIME_RIBS ;
             secret/data/github/repo/${{ github.repository }}/rancher-prime-registry/credentials registry |  PRIME_REGISTRY ;
             secret/data/github/repo/${{ github.repository }}/rancher-prime-registry/credentials username |  PRIME_REGISTRY_USERNAME ;
             secret/data/github/repo/${{ github.repository }}/rancher-prime-registry/credentials password |  PRIME_REGISTRY_PASSWORD ;
@@ -162,6 +166,7 @@ jobs:
           GOARCH: ${{ matrix.arch }}
           GOOS: ${{ matrix.os }}
           NANOSERVER_VERSION: ${{ matrix.NANOSERVER_VERSION }}
+          PRIME_RIBS: ${{ env.PRIME_RIBS }}
         with:
           image: "system-agent-installer-rke2"
           tag: ${{ github.ref_name }}
@@ -181,6 +186,7 @@ jobs:
           GOARCH: ${{ matrix.arch }}
           GOOS: ${{ matrix.os }}
           NANOSERVER_VERSION: ${{ matrix.NANOSERVER_VERSION }}
+          PRIME_RIBS: ${{ env.PRIME_RIBS }}
         with:
           image: "system-agent-installer-rke2"
           tag: ${{ github.ref_name }}
