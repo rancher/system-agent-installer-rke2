@@ -239,6 +239,9 @@ jobs:
           public-password: ${{ env.DOCKER_PASSWORD }}
           push-to-prime: false
 
+      - name: Inspect Docker image
+        run: docker buildx imagetools inspect ${{ env.IMAGE }}:${{ env.VERSION }}
+
       - name: Publish Manifest - Staging
         uses: rancher/ecm-distro-tools/actions/publish-image@master
         if: ${{ contains(github.ref_name, '-rc') }}
@@ -257,6 +260,10 @@ jobs:
           prime-registry: ${{ env.PRIME_STAGING_REGISTRY }}
           prime-username: ${{ env.PRIME_STAGING_REGISTRY_USERNAME }}
           prime-password: ${{ env.PRIME_STAGING_REGISTRY_PASSWORD }}
+
+      - name: Inspect Staging image
+        if: ${{ contains(github.ref_name, '-rc') }}
+        run: docker buildx imagetools inspect ${{ env.PRIME_STAGING_REGISTRY }}/${{ env.IMAGE }}:${{ env.VERSION }}
 
       - name: Publish Manifest - Prime
         uses: rancher/ecm-distro-tools/actions/publish-image@master
@@ -277,5 +284,6 @@ jobs:
           prime-username: ${{ env.PRIME_REGISTRY_USERNAME }}
           prime-password: ${{ env.PRIME_REGISTRY_PASSWORD }}
 
-      - name: Inspect image
-        run: docker buildx imagetools inspect ${{ env.IMAGE }}:${{ env.VERSION }}
+      - name: Inspect Prime image
+        if: ${{ !contains(github.ref_name, '-rc') }}
+        run: docker buildx imagetools inspect ${{ env.PRIME_REGISTRY }}/${{ env.IMAGE }}:${{ env.VERSION }}
