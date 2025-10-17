@@ -1,21 +1,19 @@
 #!/usr/bin/env bash
-set -ex
+set -eox pipefail
 
 cd $(dirname $0)/..
 
 source ./scripts/version
-export DOCKER_CLI_EXPERIMENTAL=enabled
 
-docker manifest create ${IMAGE} \
-    ${IMAGE}-windows-1809-amd64 \
-    ${IMAGE}-windows-ltsc2022-amd64 
-docker manifest push ${IMAGE}
+echo "Creating and pushing manifest for: ${IMAGE}"
 
-echo "updating the manifest list to append Linux tags"
-docker buildx imagetools create --tag ${IMAGE} \
-    --append ${IMAGE}-linux-amd64 \
-    --append ${IMAGE}-linux-arm64
+docker buildx imagetools create \
+  --tag "${IMAGE}" \
+  "${IMAGE}-linux-amd64" \
+  "${IMAGE}-linux-arm64" \
+  "${IMAGE}-windows-1809-amd64" \
+  "${IMAGE}-windows-ltsc2022-amd64"
 
-if [ -n "${IID_FILE}" ]; then
-    docker buildx imagetools inspect ${IMAGE}
+if [[ -n "${IID_FILE}" ]]; then
+    docker buildx imagetools inspect "${IMAGE}"
 fi

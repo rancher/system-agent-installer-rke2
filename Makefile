@@ -44,7 +44,7 @@ WINDOWS_BUILD_OPTS = \
 	--platform=$(TARGET_PLATFORMS) \
 	--build-arg TAG=$(TAG:$(BUILD_META)=) \
 	--build-arg NANOSERVER_VERSION=$(NANOSERVER) \
-	--tag "$(IMAGE)-$(NANOSERVER)"
+	--tag "$(IMAGE)"
 
 .PHONY: image-build
 image-build:
