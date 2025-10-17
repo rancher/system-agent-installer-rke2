@@ -1,24 +1,27 @@
-name: CI on Releasing Tag
-
 on:
-  push:
-    tags:
-      - "*"
+  release:
+    types: [published]
+
+name: Release Build and Push
+permissions:
+    contents: read
+    id-token: write
 
 env:
-  IMAGE: rancher/system-agent-installer-rke2
+  IMAGE: system-agent-installer-rke2
+  REPO: rancher
 
 jobs:
   build-linux:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      id-token: write # needed for the Vault authentication
     strategy:
-      fail-fast: true
-      matrix:
-        os: [ linux ]
-        arch: [ amd64, arm64 ]
+        fail-fast: true
+        matrix:
+          include:
+            - arch: amd64
+              os: linux
+            - arch: arm64
+              os: linux
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -30,54 +33,90 @@ jobs:
       - name: Set environment variables
         run: |
           echo "ARCH=${{ matrix.arch }}" >> "$GITHUB_ENV"
-          echo "OS=${{ matrix.os }}"     >> "$GITHUB_ENV"
+          echo "GIT_TAG=$(echo "${{ github.ref_name }}" | sed -e 's/+/-/g')" >> "$GITHUB_ENV"
 
       - name: Download installer
         run: scripts/download
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
 
       - name: Load secrets from Vault
         uses: rancher-eio/read-vault-secrets@main
         with:
           secrets: |
             secret/data/github/repo/${{ github.repository }}/dockerhub/rancher/credentials username | DOCKER_USERNAME ;
-            secret/data/github/repo/${{ github.repository }}/dockerhub/rancher/credentials password | DOCKER_PASSWORD
+            secret/data/github/repo/${{ github.repository }}/dockerhub/rancher/credentials password | DOCKER_PASSWORD ;
+            secret/data/github/repo/${{ github.repository }}/rancher-prime-registry/credentials primeribs |  PRIME_RIBS ;
+            secret/data/github/repo/${{ github.repository }}/rancher-prime-registry/credentials registry |  PRIME_REGISTRY ;
+            secret/data/github/repo/${{ github.repository }}/rancher-prime-registry/credentials username |  PRIME_REGISTRY_USERNAME ;
+            secret/data/github/repo/${{ github.repository }}/rancher-prime-registry/credentials password |  PRIME_REGISTRY_PASSWORD ;
+            secret/data/github/repo/${{ github.repository }}/rancher-prime-stg-registry/credentials registry |  PRIME_STAGING_REGISTRY;
+            secret/data/github/repo/${{ github.repository }}/rancher-prime-stg-registry/credentials username |  PRIME_STAGING_REGISTRY_USERNAME ;
+            secret/data/github/repo/${{ github.repository }}/rancher-prime-stg-registry/credentials password |  PRIME_STAGING_REGISTRY_PASSWORD ;
 
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
+      - name: Publish Image - Docker
+        uses: rancher/ecm-distro-tools/actions/publish-image@master
+        env:
+          ARCH: ${{ matrix.arch }}
+          OS: ${{ matrix.os }}
         with:
-          username: ${{ env.DOCKER_USERNAME }}
-          password: ${{ env.DOCKER_PASSWORD }}
+          image: ${{ env.IMAGE }}
+          tag: ${{ env.GIT_TAG }}-${{ matrix.os }}-${{ matrix.arch }}
+          make-target: push-image
 
-      - name: Build and push Docker image
-        id: build
-        uses: docker/build-push-action@v5
+          public-repo: ${{ env.REPO }}
+          public-username: ${{ env.DOCKER_USERNAME }}
+          public-password: ${{ env.DOCKER_PASSWORD }}
+          push-to-prime: false
+
+      - name: Publish Image - Staging
+        uses: rancher/ecm-distro-tools/actions/publish-image@master
+        if: ${{ contains(github.ref_name, '-rc') }}
+        env:
+          ARCH: ${{ env.ARCH }}
+          OS: ${{ matrix.os }}
+          PRIME_RIBS: ${{ env.PRIME_RIBS }}
         with:
-          context: .
-          file: package/Dockerfile
-          push: true
-          tags: "${{ env.IMAGE }}:${{ env.VERSION }}-${{ env.OS }}-${{ env.ARCH }}"
-          platforms: "${{ env.OS }}/${{ env.ARCH }}"
+          image: ${{ env.IMAGE }}
+          tag: ${{ env.GIT_TAG }}-${{ matrix.os }}-${{ matrix.arch }}
+          make-target: push-image
+
+          push-to-public: false
+
+          prime-repo: ${{ env.REPO }}
+          prime-registry: ${{ env.PRIME_STAGING_REGISTRY }}
+          prime-username: ${{ env.PRIME_STAGING_REGISTRY_USERNAME }}
+          prime-password: ${{ env.PRIME_STAGING_REGISTRY_PASSWORD }}
+
+      - name: Publish Image - Prime
+        uses: rancher/ecm-distro-tools/actions/publish-image@master
+        if: ${{ !contains(github.ref_name, '-rc') }}
+        env:
+          ARCH: ${{ env.ARCH }}
+          OS: ${{ matrix.os }}
+          PRIME_RIBS: ${{ env.PRIME_RIBS }}
+        with:
+          image: ${{ env.IMAGE }}
+          tag: ${{ env.GIT_TAG }}-${{ matrix.os }}-${{ matrix.arch }}
+          make-target: push-image
+
+          push-to-public: false
+
+          prime-repo: ${{ env.REPO }}
+          prime-registry: ${{ env.PRIME_REGISTRY }}
+          prime-username: ${{ env.PRIME_REGISTRY_USERNAME }}
+          prime-password: ${{ env.PRIME_REGISTRY_PASSWORD }}
 
   build-windows:
+    runs-on: ubuntu-latest
     strategy:
-      matrix:
-        include:
-          - NANOSERVER_VERSION: 1809
-            TAG_SUFFIX: windows-1809-amd64
-            RUNNER: windows-2022
-          - NANOSERVER_VERSION: ltsc2022
-            TAG_SUFFIX: windows-ltsc2022-amd64
-            RUNNER: windows-2022
-    runs-on: ${{ matrix.RUNNER }}
-    permissions:
-      contents: read
-      id-token: write # needed for the Vault authentication
+        fail-fast: true
+        matrix:
+          include:
+            - nanoserver-version: ltsc2022
+              arch: amd64
+              os: windows
+            - nanoserver-version: 1809
+              arch: amd64
+              os: windows
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -88,38 +127,84 @@ jobs:
 
       - name: Set environment variables
         run: |
-          "ARCH=amd64" | Out-File -FilePath $env:GITHUB_ENV -Append
+          echo "ARCH=${{ matrix.arch }}" >> "$GITHUB_ENV"
+          echo "GIT_TAG=$(echo "${{ github.ref_name }}" | sed -e 's/+/-/g')" >> "$GITHUB_ENV"
 
       - name: Download installer
-        run: scripts/windows/download.ps1
+        run: scripts/download
 
       - name: Load secrets from Vault
         uses: rancher-eio/read-vault-secrets@main
         with:
           secrets: |
             secret/data/github/repo/${{ github.repository }}/dockerhub/rancher/credentials username | DOCKER_USERNAME ;
-            secret/data/github/repo/${{ github.repository }}/dockerhub/rancher/credentials password | DOCKER_PASSWORD
+            secret/data/github/repo/${{ github.repository }}/dockerhub/rancher/credentials password | DOCKER_PASSWORD ;
+            secret/data/github/repo/${{ github.repository }}/rancher-prime-registry/credentials primeribs |  PRIME_RIBS ;
+            secret/data/github/repo/${{ github.repository }}/rancher-prime-registry/credentials registry |  PRIME_REGISTRY ;
+            secret/data/github/repo/${{ github.repository }}/rancher-prime-registry/credentials username |  PRIME_REGISTRY_USERNAME ;
+            secret/data/github/repo/${{ github.repository }}/rancher-prime-registry/credentials password |  PRIME_REGISTRY_PASSWORD ;
+            secret/data/github/repo/${{ github.repository }}/rancher-prime-stg-registry/credentials registry |  PRIME_STAGING_REGISTRY ;
+            secret/data/github/repo/${{ github.repository }}/rancher-prime-stg-registry/credentials username |  PRIME_STAGING_REGISTRY_USERNAME ;
+            secret/data/github/repo/${{ github.repository }}/rancher-prime-stg-registry/credentials password |  PRIME_STAGING_REGISTRY_PASSWORD ;
 
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
+      - name: Publish Image - Docker
+        uses: rancher/ecm-distro-tools/actions/publish-image@master
+        env:
+          ARCH: ${{ matrix.arch }}
+          NANOSERVER_VERSION: ${{ matrix.nanoserver-version }}
         with:
-          username: ${{ env.DOCKER_USERNAME }}
-          password: ${{ env.DOCKER_PASSWORD }}
+          image: ${{ env.IMAGE }}
+          tag: ${{ env.GIT_TAG }}-${{ matrix.os }}-${{ matrix.nanoserver-version }}-${{ matrix.arch }}
+          make-target: push-image-windows
+          platforms: ${{ matrix.os }}/${{ matrix.arch }}
 
-      - name: Build and push Docker image
-        run: |
-          docker image build `
-          -f package/Dockerfile.windows `
-          --build-arg NANOSERVER_VERSION=${{ matrix.NANOSERVER_VERSION }} `
-          -t ${{ env.IMAGE }}:${{ env.VERSION }}-${{ matrix.TAG_SUFFIX }} . 
-          
-          docker push ${{ env.IMAGE }}:${{ env.VERSION }}-${{ matrix.TAG_SUFFIX }}
+          public-repo: ${{ env.REPO }}
+          public-username: ${{ env.DOCKER_USERNAME }}
+          public-password: ${{ env.DOCKER_PASSWORD }}
+          push-to-prime: false
+
+      - name: Publish Image - Staging
+        uses: rancher/ecm-distro-tools/actions/publish-image@master
+        if: ${{ contains(github.ref_name, '-rc') }}
+        env:
+          ARCH: ${{ matrix.arch }}
+          NANOSERVER_VERSION: ${{ matrix.nanoserver-version }}
+          PRIME_RIBS: ${{ env.PRIME_RIBS }}
+        with:
+          image: ${{ env.IMAGE }}
+          tag: ${{ env.GIT_TAG }}-${{ matrix.os }}-${{ matrix.nanoserver-version }}-${{ matrix.arch }}
+          make-target: push-image-windows
+          platforms: ${{ matrix.os }}/${{ matrix.arch }}
+
+          push-to-public: false
+
+          prime-repo: ${{ env.REPO }}
+          prime-registry: ${{ env.PRIME_STAGING_REGISTRY }}
+          prime-username: ${{ env.PRIME_STAGING_REGISTRY_USERNAME }}
+          prime-password: ${{ env.PRIME_STAGING_REGISTRY_PASSWORD }}
+
+      - name: Publish Image - Prime
+        uses: rancher/ecm-distro-tools/actions/publish-image@master
+        if: ${{ !contains(github.ref_name, '-rc') }}
+        env:
+          ARCH: ${{ matrix.arch }}
+          NANOSERVER_VERSION: ${{ matrix.nanoserver-version }}
+          PRIME_RIBS: ${{ env.PRIME_RIBS }}
+        with:
+          image: ${{ env.IMAGE }}
+          tag: ${{ env.GIT_TAG }}-${{ matrix.os }}-${{ matrix.nanoserver-version }}-${{ matrix.arch }}
+          make-target: push-image-windows
+          platforms: ${{ matrix.os }}/${{ matrix.arch }}
+
+          push-to-public: false
+
+          prime-repo: ${{ env.REPO }}
+          prime-registry: ${{ env.PRIME_REGISTRY }}
+          prime-username: ${{ env.PRIME_REGISTRY_USERNAME }}
+          prime-password: ${{ env.PRIME_REGISTRY_PASSWORD }}
 
   create-docker-manifest:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      id-token: write # needed for the Vault authentication
     needs: [ build-linux, build-windows ]
     steps:
       - name: Checkout code
@@ -134,29 +219,63 @@ jobs:
         with:
           secrets: |
             secret/data/github/repo/${{ github.repository }}/dockerhub/rancher/credentials username | DOCKER_USERNAME ;
-            secret/data/github/repo/${{ github.repository }}/dockerhub/rancher/credentials password | DOCKER_PASSWORD
+            secret/data/github/repo/${{ github.repository }}/dockerhub/rancher/credentials password | DOCKER_PASSWORD ;
+            secret/data/github/repo/${{ github.repository }}/rancher-prime-registry/credentials registry |  PRIME_REGISTRY ;
+            secret/data/github/repo/${{ github.repository }}/rancher-prime-registry/credentials username |  PRIME_REGISTRY_USERNAME ;
+            secret/data/github/repo/${{ github.repository }}/rancher-prime-registry/credentials password |  PRIME_REGISTRY_PASSWORD ;
+            secret/data/github/repo/${{ github.repository }}/rancher-prime-stg-registry/credentials registry |  PRIME_STAGING_REGISTRY ;
+            secret/data/github/repo/${{ github.repository }}/rancher-prime-stg-registry/credentials username |  PRIME_STAGING_REGISTRY_USERNAME ;
+            secret/data/github/repo/${{ github.repository }}/rancher-prime-stg-registry/credentials password |  PRIME_STAGING_REGISTRY_PASSWORD ;
 
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
+      - name: Publish Manifest - Docker
+        uses: rancher/ecm-distro-tools/actions/publish-image@master
         with:
-          username: ${{ env.DOCKER_USERNAME }}
-          password: ${{ env.DOCKER_PASSWORD }}
+          image: ${{ env.IMAGE }}
+          tag: ${{ github.ref_name }}
+          make-target: publish-manifest
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+          public-repo: ${{ env.REPO }}
+          public-username: ${{ env.DOCKER_USERNAME }}
+          public-password: ${{ env.DOCKER_PASSWORD }}
+          push-to-prime: false
 
-      - name: Create Docker manifest
-        run: |
-          echo "creating the manifest list that contains only Windows tags to preserve the os.version metadata"
-          docker manifest create ${{ env.IMAGE }}:${{ env.VERSION }} \
-              ${{ env.IMAGE }}:${{ env.VERSION }}-windows-1809-amd64 \
-              ${{ env.IMAGE }}:${{ env.VERSION }}-windows-ltsc2022-amd64 
-          docker manifest push ${{ env.IMAGE }}:${{ env.VERSION }} 
-          
-          echo "updating the manifest list to append Linux tags"
-          docker buildx imagetools create --tag ${{ env.IMAGE }}:${{ env.VERSION }} \
-              --append ${{ env.IMAGE }}:${{ env.VERSION }}-linux-amd64 \
-              --append ${{ env.IMAGE }}:${{ env.VERSION }}-linux-arm64
+      - name: Inspect Docker image
+        run: docker buildx imagetools inspect ${{ env.REPO }}/${{ env.IMAGE }}:${{ env.VERSION }}
 
-      - name: Inspect image
-        run: docker buildx imagetools inspect ${{ env.IMAGE }}:${{ env.VERSION }}
+      - name: Publish Manifest - Staging
+        uses: rancher/ecm-distro-tools/actions/publish-image@master
+        if: ${{ contains(github.ref_name, '-rc') }}
+        with:
+          image: ${{ env.IMAGE }}
+          tag: ${{ github.ref_name }}
+          make-target: publish-manifest
+
+          push-to-public: false
+
+          prime-repo: ${{ env.REPO }}
+          prime-registry: ${{ env.PRIME_STAGING_REGISTRY }}
+          prime-username: ${{ env.PRIME_STAGING_REGISTRY_USERNAME }}
+          prime-password: ${{ env.PRIME_STAGING_REGISTRY_PASSWORD }}
+
+      - name: Inspect Staging image
+        if: ${{ contains(github.ref_name, '-rc') }}
+        run: docker buildx imagetools inspect ${{ env.PRIME_STAGING_REGISTRY }}/${{ env.REPO }}/${{ env.IMAGE }}:${{ env.VERSION }}
+
+      - name: Publish Manifest - Prime
+        uses: rancher/ecm-distro-tools/actions/publish-image@master
+        if: ${{ !contains(github.ref_name, '-rc') }}
+        with:
+          image: ${{ env.IMAGE }}
+          tag: ${{ github.ref_name }}
+          make-target: publish-manifest
+
+          push-to-public: false
+
+          prime-repo: ${{ env.REPO }}
+          prime-registry: ${{ env.PRIME_REGISTRY }}
+          prime-username: ${{ env.PRIME_REGISTRY_USERNAME }}
+          prime-password: ${{ env.PRIME_REGISTRY_PASSWORD }}
+
+      - name: Inspect Prime image
+        if: ${{ !contains(github.ref_name, '-rc') }}
+        run: docker buildx imagetools inspect ${{ env.PRIME_REGISTRY }}/${{ env.REPO }}/${{ env.IMAGE }}:${{ env.VERSION }}

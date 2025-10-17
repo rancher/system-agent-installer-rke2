@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+set -eox pipefail
+
+cd $(dirname $0)/..
+
+source ./scripts/version
+
+echo "Creating and pushing manifest for: ${IMAGE}"
+
+docker buildx imagetools create \
+  --tag "${IMAGE}" \
+  "${IMAGE}-linux-amd64" \
+  "${IMAGE}-linux-arm64" \
+  "${IMAGE}-windows-1809-amd64" \
+  "${IMAGE}-windows-ltsc2022-amd64"
+
+if [[ -n "${IID_FILE}" ]]; then
+    docker buildx imagetools inspect "${IMAGE}"
+fi
