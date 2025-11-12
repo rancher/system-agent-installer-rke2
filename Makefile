@@ -26,6 +26,7 @@ ifndef TARGET_PLATFORMS
 endif
 
 TAG ?= ${GITHUB_ACTION_TAG}
+PRIME_RIBS ?= ${PRIME_RIBS}
 SUFFIX ?= ${TAG_SUFFIX}
 NANOSERVER ?= ${NANOSERVER_VERSION}
 
@@ -64,7 +65,7 @@ image-build-windows:
 
 .PHONY: push-image
 push-image:
-	docker buildx build \
+	PRIME_RIBS=$(PRIME_RIBS) docker buildx build \
 		$(BUILD_OPTS) \
 		$(IID_FILE_FLAG) \
 		--sbom=true \
@@ -75,7 +76,7 @@ push-image:
 
 .PHONY: push-image-windows
 push-image-windows:
-	docker buildx build \
+	PRIME_RIBS=$(PRIME_RIBS) docker buildx build \
 		$(WINDOWS_BUILD_OPTS) \
 		$(IID_FILE_FLAG) \
 		--sbom=true \
