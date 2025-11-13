@@ -61,6 +61,7 @@ jobs:
           image: ${{ env.IMAGE }}
           tag: ${{ env.GIT_TAG }}-${{ matrix.os }}-${{ matrix.arch }}
           make-target: push-image
+          platforms: ${{ matrix.os }}/${{ matrix.arch }}
 
           public-repo: ${{ env.REPO }}
           public-username: ${{ env.DOCKER_USERNAME }}
@@ -78,6 +79,7 @@ jobs:
           image: ${{ env.IMAGE }}
           tag: ${{ env.GIT_TAG }}-${{ matrix.os }}-${{ matrix.arch }}
           make-target: push-image
+          platforms: ${{ matrix.os }}/${{ matrix.arch }}
 
           push-to-public: false
 
@@ -97,6 +99,7 @@ jobs:
           image: ${{ env.IMAGE }}
           tag: ${{ env.GIT_TAG }}-${{ matrix.os }}-${{ matrix.arch }}
           make-target: push-image
+          platforms: ${{ matrix.os }}/${{ matrix.arch }}
 
           push-to-public: false
 
