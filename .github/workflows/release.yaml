@@ -35,9 +35,6 @@ jobs:
           echo "ARCH=${{ matrix.arch }}" >> "$GITHUB_ENV"
           echo "GIT_TAG=$(echo "${{ github.ref_name }}" | sed -e 's/+/-/g')" >> "$GITHUB_ENV"
 
-      - name: Download installer
-        run: scripts/download
-
       - name: Load secrets from Vault
         uses: rancher-eio/read-vault-secrets@main
         with:
@@ -52,6 +49,11 @@ jobs:
             secret/data/github/repo/${{ github.repository }}/rancher-prime-stg-registry/credentials username |  PRIME_STAGING_REGISTRY_USERNAME ;
             secret/data/github/repo/${{ github.repository }}/rancher-prime-stg-registry/credentials password |  PRIME_STAGING_REGISTRY_PASSWORD ;
 
+      - name: Download installer
+        env:
+          PRIME_RIBS: ${{ env.PRIME_RIBS }}
+        run: scripts/download
+
       - name: Publish Image - Staging
         uses: rancher/ecm-distro-tools/actions/publish-image@master
         if: ${{ contains(github.ref_name, '-rc') }}
@@ -63,6 +65,7 @@ jobs:
           image: ${{ env.IMAGE }}
           tag: ${{ env.GIT_TAG }}-${{ matrix.os }}-${{ matrix.arch }}
           make-target: push-image
+          platforms: ${{ matrix.os }}/${{ matrix.arch }}
 
           push-to-public: false
 
@@ -82,6 +85,7 @@ jobs:
           image: ${{ env.IMAGE }}
           tag: ${{ env.GIT_TAG }}-${{ matrix.os }}-${{ matrix.arch }}
           make-target: push-image
+          platforms: ${{ matrix.os }}/${{ matrix.arch }}
 
           push-to-public: false
 
@@ -115,9 +119,6 @@ jobs:
           echo "ARCH=${{ matrix.arch }}" >> "$GITHUB_ENV"
           echo "GIT_TAG=$(echo "${{ github.ref_name }}" | sed -e 's/+/-/g')" >> "$GITHUB_ENV"
 
-      - name: Download installer
-        run: scripts/download
-
       - name: Load secrets from Vault
         uses: rancher-eio/read-vault-secrets@main
         with:
@@ -131,6 +132,11 @@ jobs:
             secret/data/github/repo/${{ github.repository }}/rancher-prime-stg-registry/credentials registry |  PRIME_STAGING_REGISTRY ;
             secret/data/github/repo/${{ github.repository }}/rancher-prime-stg-registry/credentials username |  PRIME_STAGING_REGISTRY_USERNAME ;
             secret/data/github/repo/${{ github.repository }}/rancher-prime-stg-registry/credentials password |  PRIME_STAGING_REGISTRY_PASSWORD ;
+
+      - name: Download installer
+        env:
+          PRIME_RIBS: ${{ env.PRIME_RIBS }}
+        run: scripts/download
 
       - name: Publish Image - Staging
         uses: rancher/ecm-distro-tools/actions/publish-image@master

@@ -87,4 +87,4 @@ push-image-windows:
 
 .PHONY: publish-manifest
 publish-manifest:  						   ## Create and push the runtime manifest
-	./scripts/publish-manifest
+	IMAGE=$(IMAGE) ./scripts/publish-manifest

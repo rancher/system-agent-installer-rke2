@@ -14,6 +14,6 @@ docker buildx imagetools create \
   "${IMAGE}-windows-1809-amd64" \
   "${IMAGE}-windows-ltsc2022-amd64"
 
-if [[ -n "${IID_FILE}" ]]; then
-    docker buildx imagetools inspect "${IMAGE}"
+if [ -n "${IID_FILE}" ]; then
+    docker buildx imagetools inspect --format "{{json .Manifest}}" ${IMAGE} | jq -r '.digest' > ${IID_FILE}
 fi
