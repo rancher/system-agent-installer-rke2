@@ -36,6 +36,8 @@ jobs:
           echo "GIT_TAG=$(echo "${{ github.ref_name }}" | sed -e 's/+/-/g')" >> "$GITHUB_ENV"
 
       - name: Download installer
+        env:
+          PRIME_RIBS: ${{ env.PRIME_RIBS }}
         run: scripts/download
 
       - name: Load secrets from Vault
@@ -117,7 +119,9 @@ jobs:
           echo "GIT_TAG=$(echo "${{ github.ref_name }}" | sed -e 's/+/-/g')" >> "$GITHUB_ENV"
 
       - name: Download installer
-        run: scripts/download-windows
+        env:
+          PRIME_RIBS: ${{ env.PRIME_RIBS }}
+        run: scripts/download
 
       - name: Load secrets from Vault
         uses: rancher-eio/read-vault-secrets@main
