@@ -36,6 +36,8 @@ jobs:
           echo "GIT_TAG=$(echo "${{ github.ref_name }}" | sed -e 's/+/-/g')" >> "$GITHUB_ENV"
 
       - name: Download installer
+        env:
+          PRIME_RIBS: ${{ env.PRIME_RIBS }}
         run: scripts/download
 
       - name: Load secrets from Vault
@@ -63,6 +65,7 @@ jobs:
           image: ${{ env.IMAGE }}
           tag: ${{ env.GIT_TAG }}-${{ matrix.os }}-${{ matrix.arch }}
           make-target: push-image
+          platforms: ${{ matrix.os }}/${{ matrix.arch }}
 
           push-to-public: false
 
@@ -82,6 +85,7 @@ jobs:
           image: ${{ env.IMAGE }}
           tag: ${{ env.GIT_TAG }}-${{ matrix.os }}-${{ matrix.arch }}
           make-target: push-image
+          platforms: ${{ matrix.os }}/${{ matrix.arch }}
 
           push-to-public: false
 
@@ -116,6 +120,8 @@ jobs:
           echo "GIT_TAG=$(echo "${{ github.ref_name }}" | sed -e 's/+/-/g')" >> "$GITHUB_ENV"
 
       - name: Download installer
+        env:
+          PRIME_RIBS: ${{ env.PRIME_RIBS }}
         run: scripts/download
 
       - name: Load secrets from Vault
