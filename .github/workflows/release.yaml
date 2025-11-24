@@ -60,7 +60,7 @@ jobs:
           SANITIZED_TAG: ${{ env.SANITIZED_TAG }}-${{ matrix.os }}-${{ matrix.arch }}
         with:
           image: ${{ env.IMAGE }}
-          tag: ${{ github.ref_name }}-${{ matrix.os }}-${{ matrix.arch }}
+          tag: ${{ env.SANITIZED_TAG }}-${{ matrix.os }}-${{ matrix.arch }}
           make-target: push-image
           platforms: ${{ matrix.os }}/${{ matrix.arch }}
 
@@ -79,7 +79,7 @@ jobs:
           SANITIZED_TAG: ${{ env.SANITIZED_TAG }}-${{ matrix.os }}-${{ matrix.arch }}
         with:
           image: ${{ env.IMAGE }}
-          tag: ${{ github.ref_name }}-${{ matrix.os }}-${{ matrix.arch }}
+          tag: ${{ env.SANITIZED_TAG }}-${{ matrix.os }}-${{ matrix.arch }}
           make-target: push-image
           platforms: ${{ matrix.os }}/${{ matrix.arch }}
 
@@ -100,7 +100,7 @@ jobs:
           SANITIZED_TAG: ${{ env.SANITIZED_TAG }}-${{ matrix.os }}-${{ matrix.arch }}
         with:
           image: ${{ env.IMAGE }}
-          tag: ${{ github.ref_name }}-${{ matrix.os }}-${{ matrix.arch }}
+          tag: ${{ env.SANITIZED_TAG }}-${{ matrix.os }}-${{ matrix.arch }}
           make-target: push-image
           platforms: ${{ matrix.os }}/${{ matrix.arch }}
 
@@ -161,7 +161,7 @@ jobs:
           SANITIZED_TAG: ${{ env.SANITIZED_TAG }}-${{ matrix.os }}-${{ matrix.nanoserver-version }}-${{ matrix.arch }}
         with:
           image: ${{ env.IMAGE }}
-          tag: ${{ github.ref_name }}-${{ matrix.os }}-${{ matrix.nanoserver-version }}-${{ matrix.arch }}
+          tag: ${{ env.SANITIZED_TAG }}-${{ matrix.os }}-${{ matrix.nanoserver-version }}-${{ matrix.arch }}
           make-target: push-image-windows
           platforms: ${{ matrix.os }}/${{ matrix.arch }}
 
@@ -180,7 +180,7 @@ jobs:
           SANITIZED_TAG: ${{ env.SANITIZED_TAG }}-${{ matrix.os }}-${{ matrix.nanoserver-version }}-${{ matrix.arch }}
         with:
           image: ${{ env.IMAGE }}
-          tag: ${{ github.ref_name }}-${{ matrix.os }}-${{ matrix.nanoserver-version }}-${{ matrix.arch }}
+          tag: ${{ env.SANITIZED_TAG }}-${{ matrix.os }}-${{ matrix.nanoserver-version }}-${{ matrix.arch }}
           make-target: push-image-windows
           platforms: ${{ matrix.os }}/${{ matrix.arch }}
 
@@ -201,7 +201,7 @@ jobs:
           SANITIZED_TAG: ${{ env.SANITIZED_TAG }}-${{ matrix.os }}-${{ matrix.nanoserver-version }}-${{ matrix.arch }}
         with:
           image: ${{ env.IMAGE }}
-          tag: ${{ github.ref_name }}-${{ matrix.os }}-${{ matrix.nanoserver-version }}-${{ matrix.arch }}
+          tag: ${{ env.SANITIZED_TAG }}-${{ matrix.os }}-${{ matrix.nanoserver-version }}-${{ matrix.arch }}
           make-target: push-image-windows
           platforms: ${{ matrix.os }}/${{ matrix.arch }}
 
@@ -243,7 +243,7 @@ jobs:
           SANITIZED_TAG: ${{ env.SANITIZED_TAG }}
         with:
           image: ${{ env.IMAGE }}
-          tag: ${{ github.ref_name }}
+          tag: ${{ env.SANITIZED_TAG }}
           make-target: publish-manifest
 
           public-repo: ${{ env.REPO }}
@@ -261,7 +261,7 @@ jobs:
           SANITIZED_TAG: ${{ env.SANITIZED_TAG }}
         with:
           image: ${{ env.IMAGE }}
-          tag: ${{ github.ref_name }}
+          tag: ${{ env.SANITIZED_TAG }}
           make-target: publish-manifest
 
           push-to-public: false
@@ -282,7 +282,7 @@ jobs:
           SANITIZED_TAG: ${{ env.SANITIZED_TAG }}
         with:
           image: ${{ env.IMAGE }}
-          tag: ${{ github.ref_name }}
+          tag: ${{ env.SANITIZED_TAG }}
           make-target: publish-manifest
 
           push-to-public: false
