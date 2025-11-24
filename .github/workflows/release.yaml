@@ -216,6 +216,7 @@ jobs:
       - name: Set environment variables
         run: |
           . scripts/version
+          echo "GIT_TAG=$(echo "${{ github.ref_name }}" | sed -e 's/+/-/g')" >> "$GITHUB_ENV"
 
       - name: Load secrets from Vault
         uses: rancher-eio/read-vault-secrets@main
@@ -234,7 +235,7 @@ jobs:
         uses: rancher/ecm-distro-tools/actions/publish-image@master
         with:
           image: ${{ env.IMAGE }}
-          tag: ${{ github.ref_name }}
+          tag: ${{ env.GIT_TAG }}
           make-target: publish-manifest
 
           public-repo: ${{ env.REPO }}
@@ -243,14 +244,14 @@ jobs:
           push-to-prime: false
 
       - name: Inspect Docker image
-        run: docker buildx imagetools inspect ${{ env.REPO }}/${{ env.IMAGE }}:${{ env.VERSION }}
+        run: docker buildx imagetools inspect ${{ env.REPO }}/${{ env.IMAGE }}:${{ env.GIT_TAG }}
 
       - name: Publish Manifest - Staging
         uses: rancher/ecm-distro-tools/actions/publish-image@master
         if: ${{ contains(github.ref_name, '-rc') }}
         with:
           image: ${{ env.IMAGE }}
-          tag: ${{ github.ref_name }}
+          tag: ${{ env.GIT_TAG }}
           make-target: publish-manifest
 
           push-to-public: false
@@ -262,14 +263,14 @@ jobs:
 
       - name: Inspect Staging image
         if: ${{ contains(github.ref_name, '-rc') }}
-        run: docker buildx imagetools inspect ${{ env.PRIME_STAGING_REGISTRY }}/${{ env.REPO }}/${{ env.IMAGE }}:${{ env.VERSION }}
+        run: docker buildx imagetools inspect ${{ env.PRIME_STAGING_REGISTRY }}/${{ env.REPO }}/${{ env.IMAGE }}:${{ env.GIT_TAG }}
 
       - name: Publish Manifest - Prime
         uses: rancher/ecm-distro-tools/actions/publish-image@master
         if: ${{ !contains(github.ref_name, '-rc') }}
         with:
           image: ${{ env.IMAGE }}
-          tag: ${{ github.ref_name }}
+          tag: ${{ env.GIT_TAG }}
           make-target: publish-manifest
 
           push-to-public: false
@@ -281,4 +282,4 @@ jobs:
 
       - name: Inspect Prime image
         if: ${{ !contains(github.ref_name, '-rc') }}
-        run: docker buildx imagetools inspect ${{ env.PRIME_REGISTRY }}/${{ env.REPO }}/${{ env.IMAGE }}:${{ env.VERSION }}
+        run: docker buildx imagetools inspect ${{ env.PRIME_REGISTRY }}/${{ env.REPO }}/${{ env.IMAGE }}:${{ env.GIT_TAG }}
