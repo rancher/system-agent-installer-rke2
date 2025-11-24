@@ -32,7 +32,8 @@ jobs:
 
       - name: Set environment variables
         run: |
-          echo "ARCH=${{ matrix.arch }}" >> "$GITHUB_ENV"
+          . scripts/version
+          echo "SANITIZED_TAG=$(echo "${{ github.ref_name }}" | sed -e 's/+/-/g')" >> "$GITHUB_ENV"
 
       - name: Download installer
         run: scripts/download
@@ -56,6 +57,7 @@ jobs:
         env:
           ARCH: ${{ matrix.arch }}
           OS: ${{ matrix.os }}
+          SANITIZED_TAG: ${{ env.SANITIZED_TAG }}-${{ matrix.os }}-${{ matrix.arch }}
         with:
           image: ${{ env.IMAGE }}
           tag: ${{ github.ref_name }}-${{ matrix.os }}-${{ matrix.arch }}
@@ -73,7 +75,8 @@ jobs:
         env:
           ARCH: ${{ env.ARCH }}
           OS: ${{ matrix.os }}
-          PRIME_RIBS: ${{ env.PRIME_RIBS }}
+          PRIME_RIBS_URL: ${{ env.PRIME_RIBS }}
+          SANITIZED_TAG: ${{ env.SANITIZED_TAG }}-${{ matrix.os }}-${{ matrix.arch }}
         with:
           image: ${{ env.IMAGE }}
           tag: ${{ github.ref_name }}-${{ matrix.os }}-${{ matrix.arch }}
@@ -93,7 +96,8 @@ jobs:
         env:
           ARCH: ${{ env.ARCH }}
           OS: ${{ matrix.os }}
-          PRIME_RIBS: ${{ env.PRIME_RIBS }}
+          PRIME_RIBS_URL: ${{ env.PRIME_RIBS }}
+          SANITIZED_TAG: ${{ env.SANITIZED_TAG }}-${{ matrix.os }}-${{ matrix.arch }}
         with:
           image: ${{ env.IMAGE }}
           tag: ${{ github.ref_name }}-${{ matrix.os }}-${{ matrix.arch }}
@@ -129,7 +133,8 @@ jobs:
 
       - name: Set environment variables
         run: |
-          echo "ARCH=${{ matrix.arch }}" >> "$GITHUB_ENV"
+          . scripts/version
+          echo "SANITIZED_TAG=$(echo "${{ github.ref_name }}" | sed -e 's/+/-/g')" >> "$GITHUB_ENV"
 
       - name: Download installer
         run: scripts/download
@@ -153,6 +158,7 @@ jobs:
         env:
           ARCH: ${{ matrix.arch }}
           NANOSERVER_VERSION: ${{ matrix.nanoserver-version }}
+          SANITIZED_TAG: ${{ env.SANITIZED_TAG }}-${{ matrix.os }}-${{ matrix.nanoserver-version }}-${{ matrix.arch }}
         with:
           image: ${{ env.IMAGE }}
           tag: ${{ github.ref_name }}-${{ matrix.os }}-${{ matrix.nanoserver-version }}-${{ matrix.arch }}
@@ -170,7 +176,8 @@ jobs:
         env:
           ARCH: ${{ matrix.arch }}
           NANOSERVER_VERSION: ${{ matrix.nanoserver-version }}
-          PRIME_RIBS: ${{ env.PRIME_RIBS }}
+          PRIME_RIBS_URL: ${{ env.PRIME_RIBS }}
+          SANITIZED_TAG: ${{ env.SANITIZED_TAG }}-${{ matrix.os }}-${{ matrix.nanoserver-version }}-${{ matrix.arch }}
         with:
           image: ${{ env.IMAGE }}
           tag: ${{ github.ref_name }}-${{ matrix.os }}-${{ matrix.nanoserver-version }}-${{ matrix.arch }}
@@ -190,7 +197,8 @@ jobs:
         env:
           ARCH: ${{ matrix.arch }}
           NANOSERVER_VERSION: ${{ matrix.nanoserver-version }}
-          PRIME_RIBS: ${{ env.PRIME_RIBS }}
+          PRIME_RIBS_URL: ${{ env.PRIME_RIBS }}
+          SANITIZED_TAG: ${{ env.SANITIZED_TAG }}-${{ matrix.os }}-${{ matrix.nanoserver-version }}-${{ matrix.arch }}
         with:
           image: ${{ env.IMAGE }}
           tag: ${{ github.ref_name }}-${{ matrix.os }}-${{ matrix.nanoserver-version }}-${{ matrix.arch }}
@@ -214,6 +222,7 @@ jobs:
       - name: Set environment variables
         run: |
           . scripts/version
+          echo "SANITIZED_TAG=$(echo "${{ github.ref_name }}" | sed -e 's/+/-/g')" >> "$GITHUB_ENV"
 
       - name: Load secrets from Vault
         uses: rancher-eio/read-vault-secrets@main
@@ -230,6 +239,8 @@ jobs:
 
       - name: Publish Manifest - Docker
         uses: rancher/ecm-distro-tools/actions/publish-image@master
+        env:
+          SANITIZED_TAG: ${{ env.SANITIZED_TAG }}
         with:
           image: ${{ env.IMAGE }}
           tag: ${{ github.ref_name }}
@@ -241,11 +252,13 @@ jobs:
           push-to-prime: false
 
       - name: Inspect Docker image
-        run: docker buildx imagetools inspect ${{ env.REPO }}/${{ env.IMAGE }}:${{ env.VERSION }}
+        run: docker buildx imagetools inspect ${{ env.REPO }}/${{ env.IMAGE }}:${{ env.SANITIZED_TAG }}
 
       - name: Publish Manifest - Staging
         uses: rancher/ecm-distro-tools/actions/publish-image@master
         if: ${{ contains(github.ref_name, '-rc') }}
+        env:
+          SANITIZED_TAG: ${{ env.SANITIZED_TAG }}
         with:
           image: ${{ env.IMAGE }}
           tag: ${{ github.ref_name }}
@@ -260,11 +273,13 @@ jobs:
 
       - name: Inspect Staging image
         if: ${{ contains(github.ref_name, '-rc') }}
-        run: docker buildx imagetools inspect ${{ env.PRIME_STAGING_REGISTRY }}/${{ env.REPO }}/${{ env.IMAGE }}:${{ env.VERSION }}
+        run: docker buildx imagetools inspect ${{ env.PRIME_STAGING_REGISTRY }}/${{ env.REPO }}/${{ env.IMAGE }}:${{ env.SANITIZED_TAG }}
 
       - name: Publish Manifest - Prime
         uses: rancher/ecm-distro-tools/actions/publish-image@master
         if: ${{ !contains(github.ref_name, '-rc') }}
+        env:
+          SANITIZED_TAG: ${{ env.SANITIZED_TAG }}
         with:
           image: ${{ env.IMAGE }}
           tag: ${{ github.ref_name }}
@@ -279,4 +294,4 @@ jobs:
 
       - name: Inspect Prime image
         if: ${{ !contains(github.ref_name, '-rc') }}
-        run: docker buildx imagetools inspect ${{ env.PRIME_REGISTRY }}/${{ env.REPO }}/${{ env.IMAGE }}:${{ env.VERSION }}
+        run: docker buildx imagetools inspect ${{ env.PRIME_REGISTRY }}/${{ env.REPO }}/${{ env.IMAGE }}:${{ env.SANITIZED_TAG }}
