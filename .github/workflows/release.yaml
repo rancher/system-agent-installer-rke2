@@ -33,7 +33,6 @@ jobs:
       - name: Set environment variables
         run: |
           echo "ARCH=${{ matrix.arch }}" >> "$GITHUB_ENV"
-          echo "GIT_TAG=$(echo "${{ github.ref_name }}" | sed -e 's/+/-/g')" >> "$GITHUB_ENV"
 
       - name: Download installer
         run: scripts/download
@@ -59,7 +58,7 @@ jobs:
           OS: ${{ matrix.os }}
         with:
           image: ${{ env.IMAGE }}
-          tag: ${{ env.GIT_TAG }}-${{ matrix.os }}-${{ matrix.arch }}
+          tag: ${{ github.ref_name }}-${{ matrix.os }}-${{ matrix.arch }}
           make-target: push-image
           platforms: ${{ matrix.os }}/${{ matrix.arch }}
 
@@ -77,7 +76,7 @@ jobs:
           PRIME_RIBS: ${{ env.PRIME_RIBS }}
         with:
           image: ${{ env.IMAGE }}
-          tag: ${{ env.GIT_TAG }}-${{ matrix.os }}-${{ matrix.arch }}
+          tag: ${{ github.ref_name }}-${{ matrix.os }}-${{ matrix.arch }}
           make-target: push-image
           platforms: ${{ matrix.os }}/${{ matrix.arch }}
 
@@ -97,7 +96,7 @@ jobs:
           PRIME_RIBS: ${{ env.PRIME_RIBS }}
         with:
           image: ${{ env.IMAGE }}
-          tag: ${{ env.GIT_TAG }}-${{ matrix.os }}-${{ matrix.arch }}
+          tag: ${{ github.ref_name }}-${{ matrix.os }}-${{ matrix.arch }}
           make-target: push-image
           platforms: ${{ matrix.os }}/${{ matrix.arch }}
 
@@ -131,7 +130,6 @@ jobs:
       - name: Set environment variables
         run: |
           echo "ARCH=${{ matrix.arch }}" >> "$GITHUB_ENV"
-          echo "GIT_TAG=$(echo "${{ github.ref_name }}" | sed -e 's/+/-/g')" >> "$GITHUB_ENV"
 
       - name: Download installer
         run: scripts/download
@@ -157,7 +155,7 @@ jobs:
           NANOSERVER_VERSION: ${{ matrix.nanoserver-version }}
         with:
           image: ${{ env.IMAGE }}
-          tag: ${{ env.GIT_TAG }}-${{ matrix.os }}-${{ matrix.nanoserver-version }}-${{ matrix.arch }}
+          tag: ${{ github.ref_name }}-${{ matrix.os }}-${{ matrix.nanoserver-version }}-${{ matrix.arch }}
           make-target: push-image-windows
           platforms: ${{ matrix.os }}/${{ matrix.arch }}
 
@@ -175,7 +173,7 @@ jobs:
           PRIME_RIBS: ${{ env.PRIME_RIBS }}
         with:
           image: ${{ env.IMAGE }}
-          tag: ${{ env.GIT_TAG }}-${{ matrix.os }}-${{ matrix.nanoserver-version }}-${{ matrix.arch }}
+          tag: ${{ github.ref_name }}-${{ matrix.os }}-${{ matrix.nanoserver-version }}-${{ matrix.arch }}
           make-target: push-image-windows
           platforms: ${{ matrix.os }}/${{ matrix.arch }}
 
@@ -195,7 +193,7 @@ jobs:
           PRIME_RIBS: ${{ env.PRIME_RIBS }}
         with:
           image: ${{ env.IMAGE }}
-          tag: ${{ env.GIT_TAG }}-${{ matrix.os }}-${{ matrix.nanoserver-version }}-${{ matrix.arch }}
+          tag: ${{ github.ref_name }}-${{ matrix.os }}-${{ matrix.nanoserver-version }}-${{ matrix.arch }}
           make-target: push-image-windows
           platforms: ${{ matrix.os }}/${{ matrix.arch }}
 
