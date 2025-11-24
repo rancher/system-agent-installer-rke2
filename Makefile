@@ -25,15 +25,15 @@ ifndef TARGET_PLATFORMS
 	endif
 endif
 
-TAG ?= ${VERSION}
-PRIME_RIBS ?= ${PRIME_RIBS}
+SANITIZED_TAG ?= ${SANITIZED_TAG}
+PRIME_RIBS ?= ${PRIME_RIBS_URL}
 SUFFIX ?= ${TAG_SUFFIX}
 NANOSERVER ?= ${NANOSERVER_VERSION}
 
 export DOCKER_BUILDKIT?=1
 
 REPO ?= rancher
-IMAGE = $(REPO)/system-agent-installer-rke2:$(TAG)
+IMAGE = $(REPO)/system-agent-installer-rke2:$(SANITIZED_TAG)
 
 BUILD_OPTS = \
 	--platform=$(TARGET_PLATFORMS) \
