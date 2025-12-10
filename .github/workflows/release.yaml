@@ -134,7 +134,7 @@ jobs:
           echo "GIT_TAG=$(echo "${{ github.ref_name }}" | sed -e 's/+/-/g')" >> "$GITHUB_ENV"
 
       - name: Download installer
-        run: scripts/download
+        run: scripts/download-windows
 
       - name: Load secrets from Vault
         uses: rancher-eio/read-vault-secrets@main
