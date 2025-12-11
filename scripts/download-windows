@@ -13,8 +13,8 @@ cd $(dirname $0)/..
 mkdir -p artifacts
 
 if [ -z "${LOCAL_ARTIFACTS}" ]; then
-    curl -fL https://raw.githubusercontent.com/rancher/rke2/master/install.sh > artifacts/installer.sh
-    chmod +x artifacts/installer.sh
+    curl -fL https://raw.githubusercontent.com/rancher/rke2/master/install.ps1 > artifacts/installer.ps1
+    chmod +x artifacts/installer.ps1
 
     if [[ "${ARCH}" = "arm64" ]] && [[ "${VERSION}" =~ ^v1\.(20|24|25|26)\. ]]; then
         echo "Skipping arm64 - not supported for this version."
