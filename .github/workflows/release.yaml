@@ -24,7 +24,7 @@ jobs:
               os: linux
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
       - name: Fix the not-a-git-repository issue
         run: |
@@ -36,7 +36,7 @@ jobs:
           echo "GIT_TAG=$(echo "${{ github.ref_name }}" | sed -e 's/+/-/g')" >> "$GITHUB_ENV"
 
       - name: Load secrets from Vault
-        uses: rancher-eio/read-vault-secrets@main
+        uses: rancher-eio/read-vault-secrets@0da85151ad1f19ed7986c41587e45aac1ace74b6 # v3
         with:
           secrets: |
             secret/data/github/repo/${{ github.repository }}/dockerhub/rancher/credentials username | DOCKER_USERNAME ;
@@ -55,7 +55,7 @@ jobs:
         run: scripts/download
 
       - name: Publish Image - Staging
-        uses: rancher/ecm-distro-tools/actions/publish-image@master
+        uses: rancher/ecm-distro-tools/actions/publish-image@575bb831c67edd950bfedb59d41dd127bd0005d6 # v0.65.2
         if: ${{ contains(github.ref_name, '-rc') }}
         env:
           ARCH: ${{ env.ARCH }}
@@ -75,7 +75,7 @@ jobs:
           prime-password: ${{ env.PRIME_STAGING_REGISTRY_PASSWORD }}
 
       - name: Publish Image - Prime
-        uses: rancher/ecm-distro-tools/actions/publish-image@master
+        uses: rancher/ecm-distro-tools/actions/publish-image@575bb831c67edd950bfedb59d41dd127bd0005d6 # v0.65.2
         if: ${{ !contains(github.ref_name, '-rc') }}
         env:
           ARCH: ${{ env.ARCH }}
@@ -108,7 +108,7 @@ jobs:
               os: windows
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
       - name: Fix the not-a-git-repository issue
         run: |
@@ -120,7 +120,7 @@ jobs:
           echo "GIT_TAG=$(echo "${{ github.ref_name }}" | sed -e 's/+/-/g')" >> "$GITHUB_ENV"
 
       - name: Load secrets from Vault
-        uses: rancher-eio/read-vault-secrets@main
+        uses: rancher-eio/read-vault-secrets@0da85151ad1f19ed7986c41587e45aac1ace74b6 # v3
         with:
           secrets: |
             secret/data/github/repo/${{ github.repository }}/dockerhub/rancher/credentials username | DOCKER_USERNAME ;
@@ -139,7 +139,7 @@ jobs:
         run: scripts/download
 
       - name: Publish Image - Staging
-        uses: rancher/ecm-distro-tools/actions/publish-image@master
+        uses: rancher/ecm-distro-tools/actions/publish-image@575bb831c67edd950bfedb59d41dd127bd0005d6 # v0.65.2
         if: ${{ contains(github.ref_name, '-rc') }}
         env:
           ARCH: ${{ matrix.arch }}
@@ -159,7 +159,7 @@ jobs:
           prime-password: ${{ env.PRIME_STAGING_REGISTRY_PASSWORD }}
 
       - name: Publish Image - Prime
-        uses: rancher/ecm-distro-tools/actions/publish-image@master
+        uses: rancher/ecm-distro-tools/actions/publish-image@575bb831c67edd950bfedb59d41dd127bd0005d6 # v0.65.2
         if: ${{ !contains(github.ref_name, '-rc') }}
         env:
           ARCH: ${{ matrix.arch }}
@@ -183,14 +183,14 @@ jobs:
     needs: [ build-linux, build-windows ]
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
       - name: Set environment variables
         run: |
           . scripts/version
 
       - name: Load secrets from Vault
-        uses: rancher-eio/read-vault-secrets@main
+        uses: rancher-eio/read-vault-secrets@0da85151ad1f19ed7986c41587e45aac1ace74b6 # v3
         with:
           secrets: |
             secret/data/github/repo/${{ github.repository }}/dockerhub/rancher/credentials username | DOCKER_USERNAME ;
@@ -207,7 +207,7 @@ jobs:
           echo "GIT_TAG=$(echo "${{ github.ref_name }}" | sed -e 's/+/-/g')" >> "$GITHUB_ENV"
 
       - name: Publish Manifest - Staging
-        uses: rancher/ecm-distro-tools/actions/publish-image@master
+        uses: rancher/ecm-distro-tools/actions/publish-image@575bb831c67edd950bfedb59d41dd127bd0005d6 # v0.65.2
         if: ${{ contains(github.ref_name, '-rc') }}
         with:
           image: ${{ env.IMAGE }}
@@ -226,7 +226,7 @@ jobs:
         run: docker buildx imagetools inspect ${{ env.PRIME_STAGING_REGISTRY }}/${{ env.REPO }}/${{ env.IMAGE }}:${{ env.GIT_TAG }}
 
       - name: Publish Manifest - Prime
-        uses: rancher/ecm-distro-tools/actions/publish-image@master
+        uses: rancher/ecm-distro-tools/actions/publish-image@575bb831c67edd950bfedb59d41dd127bd0005d6 # v0.65.2
         if: ${{ !contains(github.ref_name, '-rc') }}
         with:
           image: ${{ env.IMAGE }}
