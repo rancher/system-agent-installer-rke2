@@ -31,6 +31,7 @@ if [ -z "${LOCAL_ARTIFACTS}" ]; then
         curl -fL -O -R https://github.com/rancher/rke2/releases/download/${URI_VERSION}/rke2-images.windows-${ARCH}.txt
         curl -fL -O -R https://github.com/rancher/rke2/releases/download/${URI_VERSION}/sha256sum-${ARCH}.txt
     fi
+    grep -E "rke2\.windows-${ARCH}\.tar\.gz|rke2-images\.windows-${ARCH}\.txt" sha256sum-${ARCH}.txt | sha256sum -c -
     popd
 else
     cp local/* artifacts
