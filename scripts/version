@@ -9,7 +9,7 @@ if [ -z "$OS" ]; then
     OS="linux"
 fi
 
-FALLBACK_VERSION=v1.20.4+rke2r1
+FALLBACK_VERSION=v1.35.2+rke2r1
 
 # This version script expects either a tag of format: <rke2-version> or no tag at all.
 
