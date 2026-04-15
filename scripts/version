@@ -21,10 +21,10 @@ if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
   TAG="$GITHUB_REF_NAME"
 fi
 
-# If we're in a dapperized environment, we should be able to figure out what our current tag and commit are.
 if [ -z "${TAG}" ]; then
-    if [ -d ${DAPPER_SOURCE}/.git ]; then
-        pushd ${DAPPER_SOURCE}
+    REPO_ROOT=$(cd "$(dirname $0)/.." && pwd)
+    if [ -d ${REPO_ROOT}/.git ]; then
+        pushd ${REPO_ROOT}
 
         if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
             DIRTY="dirty"
