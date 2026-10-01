@@ -56,7 +56,6 @@ jobs:
 
       - name: Publish Image - Staging
         uses: rancher/ecm-distro-tools/actions/publish-image@575bb831c67edd950bfedb59d41dd127bd0005d6 # v0.65.2
-        if: ${{ contains(github.ref_name, '-rc') }}
         env:
           ARCH: ${{ env.ARCH }}
           OS: ${{ matrix.os }}
@@ -140,7 +139,6 @@ jobs:
 
       - name: Publish Image - Staging
         uses: rancher/ecm-distro-tools/actions/publish-image@575bb831c67edd950bfedb59d41dd127bd0005d6 # v0.65.2
-        if: ${{ contains(github.ref_name, '-rc') }}
         env:
           ARCH: ${{ matrix.arch }}
           NANOSERVER_VERSION: ${{ matrix.nanoserver-version }}
@@ -188,6 +186,7 @@ jobs:
       - name: Set environment variables
         run: |
           . scripts/version
+          echo "GIT_TAG=$(echo "${{ github.ref_name }}" | sed -e 's/+/-/g')" >> "$GITHUB_ENV"
 
       - name: Load secrets from Vault
         uses: rancher-eio/read-vault-secrets@0da85151ad1f19ed7986c41587e45aac1ace74b6 # v3
@@ -208,7 +207,6 @@ jobs:
 
       - name: Publish Manifest - Staging
         uses: rancher/ecm-distro-tools/actions/publish-image@575bb831c67edd950bfedb59d41dd127bd0005d6 # v0.65.2
-        if: ${{ contains(github.ref_name, '-rc') }}
         with:
           image: ${{ env.IMAGE }}
           tag: ${{ env.GIT_TAG }}
@@ -222,7 +220,6 @@ jobs:
           prime-password: ${{ env.PRIME_STAGING_REGISTRY_PASSWORD }}
 
       - name: Inspect Staging image
-        if: ${{ contains(github.ref_name, '-rc') }}
         run: docker buildx imagetools inspect ${{ env.PRIME_STAGING_REGISTRY }}/${{ env.REPO }}/${{ env.IMAGE }}:${{ env.GIT_TAG }}
 
       - name: Publish Manifest - Prime

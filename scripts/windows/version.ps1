@@ -21,8 +21,9 @@ if ( $env:GITHUB_REF_TYPE -eq "tag"){
 }
 
 if (-not $TAG) {
-    if (Test-Path -Path $env:DAPPER_SOURCE\.git) {
-        Push-Location $env:DAPPER_SOURCE
+    $REPO_ROOT = (Resolve-Path "$PSScriptRoot\..\..")
+    if (Test-Path -Path $REPO_ROOT\.git) {
+        Push-Location $REPO_ROOT
         if ("$(git status --porcelain --untracked-files=no)") {
             $env:DIRTY = "dirty"
             $TREE_STATE = "dirty"
